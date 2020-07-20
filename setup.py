@@ -10,7 +10,7 @@ with open("requirements.txt") as f:
 setup(
     name = 'gdoc_api',
     version = '0.1',
-    url = 'http://github.com/dag-hammarskjold-library/dlx',
+    url = None,
     author = 'United Nations Dag Hammarskjöld Library',
     author_email = 'library-ny@un.org',
     license = 'http://www.opensource.org/licenses/bsd-license.php',
@@ -23,7 +23,7 @@ setup(
     python_requires = '>=3.5',
     entry_points = {
         'console_scripts': [
-            'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:main'
+            'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:run'
         ]
     }
 )

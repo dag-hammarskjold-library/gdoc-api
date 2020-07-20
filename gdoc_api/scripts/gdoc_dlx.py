@@ -1,7 +1,7 @@
 import sys, re, logging
 from argparse import ArgumentParser
 from dlx import DB as DLX
-from dlx.file import S3, File, Identifier, FileExists, FileExistsIdentifierConflict, FileExistsLanguageConflict
+from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
 logging.basicConfig(filename='log', level=logging.INFO)
@@ -25,7 +25,7 @@ parser.add_argument('--overwrite', action='store_true')
 
 ###
 
-def main():
+def run():
     args = parser.parse_args()
     
     if not args.date and not args.symbol:
@@ -76,23 +76,20 @@ def main():
                 filename=encode_fn(list(filter(None, symbols)), languages[0], 'pdf'),
                 identifiers=identifiers,
                 languages=languages,
-                mimetype='appliction/pdf',
+                mimetype='application/pdf',
                 source='gdoc-importx-' + g.station,
                 overwrite=overwrite
             )
-        except FileExistsIdentifierConflict as e:
-            logging.warning('Identifier conflict. File for import: {} - {} is already in the system as  {} - {}'.format(symbols, languages, e.existing_identifiers, e.existing_languages))
-        except FileExistsLanguageConflict as e:
-            logging.warning('Language conflict. File for import: {} - {} is already in the system as  {} - {}'.format(symbols, languages, e.existing_identifiers, e.existing_languages))
+        except FileExistsConflict as e:
+            logging.warning(f'{symbols} {languages} {e.message}')
         except FileExists:
-            logging.info('{} {} already exists'.format(list(filter(None, symbols)), languages))
-            return
+            logging.info(f'{symbols} {languages} is already in the system')
         except Exception as e:
             raise e
             
     for result in g.iter_files(upload):
         if result:
-            logging.info('OK {}'.format(result))
+            logging.info(f'OK - {results.id} {result.identifiers} {result.languages}')
     
     logging.info('Done')
 
@@ -110,4 +107,4 @@ def encode_fn(symbols, language, extension):
 ###
 
 if __name__ == 'main':
-    main()
+    run()
