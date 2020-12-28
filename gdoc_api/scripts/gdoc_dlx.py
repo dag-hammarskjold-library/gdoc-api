@@ -89,7 +89,7 @@ def run():
             
     for result in g.iter_files(upload):
         if result:
-            logging.info(f'OK - {results.id} {result.identifiers} {result.languages}')
+            logging.info(f'OK - {result.id} {result.identifiers} {result.languages}')
     
     logging.info('Done')
 
