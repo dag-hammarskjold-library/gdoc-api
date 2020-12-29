@@ -1,1 +1,2 @@
+cryptography==2.9.2
 git+https://github.com/dag-hammarskjold-library/dlx
