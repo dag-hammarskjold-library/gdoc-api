@@ -22,7 +22,7 @@ g.iter_files(todo)
 ```
 
 #### Scripts
-> #### ods-dlx
+> #### gdoc-dlx
 Gets files from Gdoc and imports them into DLX
 
 Usage (command line):

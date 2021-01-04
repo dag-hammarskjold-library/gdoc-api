@@ -27,7 +27,7 @@ def get_args():
     c.add_argument('--date', help='YYYY-MM-DD')
     c.add_argument('--symbol')
     
-    # optional
+    # not required
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
     parser.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     
