@@ -92,7 +92,7 @@ def run():
                 identifiers=identifiers,
                 languages=languages,
                 mimetype='application/pdf',
-                source='gdoc-importx-' + g.station,
+                source='gdoc-dlx-' + g.station,
                 overwrite=overwrite
             )
         except FileExistsConflict as e:
@@ -101,6 +101,8 @@ def run():
             logging.info(f'{symbols} {languages} is already in the system')
         except Exception as e:
             raise e
+            
+        
             
     for result in g.iter_files(upload):
         if result:
