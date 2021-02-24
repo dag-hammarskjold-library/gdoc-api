@@ -8,25 +8,40 @@ logging.basicConfig(filename='log', level=logging.INFO)
 sys.stderr = open('log', 'a')
 logging.info(sys.argv)
 
-parser = ArgumentParser(prog='gdoc-importx')
-parser.add_argument('--dlx_connect', required=True, help='dlx MDB connection string')
-parser.add_argument('--s3_key_id', required=True)
-parser.add_argument('--s3_key', required=True)
-parser.add_argument('--s3_bucket', required=True)
-parser.add_argument('--gdoc_api_username', required=True)
-parser.add_argument('--gdoc_api_password', required=True)
-parser.add_argument('--gdoc_username', required=True)
-parser.add_argument('--gdoc_password', required=True)
-parser.add_argument('--station', required=True)
-parser.add_argument('--date')
-parser.add_argument('--symbol')
-parser.add_argument('--language')
-parser.add_argument('--overwrite', action='store_true')
+def get_args():
+    parser = ArgumentParser(prog='gdoc-dlx')
+    
+    # required
+    parser.add_argument('--dlx_connect', required=True, help='MongoDB connection string')
+    parser.add_argument('--s3_key_id', required=True)
+    parser.add_argument('--s3_key', required=True)
+    parser.add_argument('--s3_bucket', required=True)
+    parser.add_argument('--gdoc_api_username', required=True)
+    parser.add_argument('--gdoc_api_password', required=True)
+    parser.add_argument('--gdoc_username', required=True)
+    parser.add_argument('--gdoc_password', required=True)
+    parser.add_argument('--station', required=True, choices=['NY', 'GE'])
+    
+    # at least one required
+    c = parser.add_mutually_exclusive_group(required=True)
+    c.add_argument('--date', help='YYYY-MM-DD')
+    c.add_argument('--symbol')
+    
+    # not required
+    parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
+    parser.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
+    
+    return parser.parse_args()
+
+def set_log():
+    args = get_args()
+    
+    
 
 ###
 
 def run():
-    args = parser.parse_args()
+    args = get_args()
     
     if not args.date and not args.symbol:
         raise Exception('--symbol or --date required')
@@ -77,7 +92,7 @@ def run():
                 identifiers=identifiers,
                 languages=languages,
                 mimetype='application/pdf',
-                source='gdoc-importx-' + g.station,
+                source='gdoc-dlx-' + g.station,
                 overwrite=overwrite
             )
         except FileExistsConflict as e:
@@ -86,6 +101,8 @@ def run():
             logging.info(f'{symbols} {languages} is already in the system')
         except Exception as e:
             raise e
+            
+        
             
     for result in g.iter_files(upload):
         if result:
@@ -106,5 +123,5 @@ def encode_fn(symbols, language, extension):
     
 ###
 
-if __name__ == 'main':
+if __name__ == '__main__':
     run()
