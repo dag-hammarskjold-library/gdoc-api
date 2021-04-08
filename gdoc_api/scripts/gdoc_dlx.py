@@ -4,6 +4,23 @@ from dlx import DB as DLX
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
+''' OAuth2 Flow
+
+from gdoc_api import Gdoc
+from datetime import datetime, timezone
+g = Gdoc()
+TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+g.set_param('dateFrom', TODAY)
+g.set_param('dateTo', TODAY)
+g.set_param('dutyStation', 'NY')
+g.set_param('includeFiles', 'false')
+token = g.authenticate(endpoint URL, gDoc API Username, gDoc API Password,[scope, scope, ...])
+g.data(token)
+
+and so on...
+
+'''
+
 logging.basicConfig(filename='log', level=logging.INFO)
 sys.stderr = open('log', 'a')
 logging.info(sys.argv)
@@ -16,10 +33,10 @@ def get_args():
     parser.add_argument('--s3_key_id', required=True)
     parser.add_argument('--s3_key', required=True)
     parser.add_argument('--s3_bucket', required=True)
+    parser.add_argument('--token_url', required=True)
     parser.add_argument('--gdoc_api_username', required=True)
     parser.add_argument('--gdoc_api_password', required=True)
-    parser.add_argument('--gdoc_username', required=True)
-    parser.add_argument('--gdoc_password', required=True)
+    parser.add_argument('--api_scope', required=True, help='comma separated list of API scopes, e.g., scope1,scope2')
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
     
     # at least one required
@@ -52,18 +69,16 @@ def run():
     DLX.connect(args.dlx_connect)    
     S3.connect(args.s3_key_id, args.s3_key, args.s3_bucket)
 
-    g = Gdoc(
-        api_username=args.gdoc_api_username, 
-        api_password=args.gdoc_api_password, 
-        username=args.gdoc_username,
-        password=args.gdoc_password,
-        station=args.station
-    )
-    
-    g.set_param('Symbol', args.symbol or '')
-    g.set_param('DateFrom', args.date or '')
-    g.set_param('DateTo', args.date or '')
-    g.set_param('DutyStation', args.station or '')
+    g = Gdoc()
+    g.set_param('symbol', args.symbol or '')
+    g.set_param('dateFrom', args.date or TODAY)
+    g.set_param('dateTo', args.date or TODAY)
+    g.set_param('dutyStation', args.station or 'NY')
+
+    scope = arg.api_scope.split(',')
+    print(scope)
+
+    token = g.authenticate(args.token_url, args.gdoc_api_username, args.gdoc_api_password, )
     
     def upload(fh, data):
         symbols = [data['symbol1']]

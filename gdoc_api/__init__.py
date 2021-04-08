@@ -11,8 +11,9 @@ logging.basicConfig(filename='log', level=logging.INFO)
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
-    def __init__(self, **kwargs):
+    def __init__(self, api_secrets, **kwargs):
         self._data = {} 
+        self.api_secrets = api_secrets
         self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
         self.base = 'https://gdoc.un.org/api/ods/getdocuments'
         self.parameters = {
@@ -22,22 +23,23 @@ class Gdoc():
             'includeFiles': '',
             'symbol': ''
         }
+        self.token = self.authenticate(api_secrets['token_url'], api_secrets['userName'], api_secrets['password'], api_secrets['scope'])
         
-    #@property
+    @property
     def data(self, token):
         if self._data:
             return self._data
 
-        self.download(token)
+        self.download(self.token)
         
         return self._data
     
-    #@property
+    @property
     def zipfile(self, token):
         if self._zipfile:
             return self._zipfile
         
-        self.download(token)
+        self.download(self.token)
         
         return self._zipfile
         
