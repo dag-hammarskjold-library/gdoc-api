@@ -26,7 +26,7 @@ class Gdoc():
         self.token = self.authenticate(api_secrets['token_url'], api_secrets['userName'], api_secrets['password'], api_secrets['scope'])
         
     @property
-    def data(self, token):
+    def data(self):
         if self._data:
             return self._data
 
@@ -35,7 +35,7 @@ class Gdoc():
         return self._data
     
     @property
-    def zipfile(self, token):
+    def zipfile(self):
         if self._zipfile:
             return self._zipfile
         
@@ -77,7 +77,7 @@ class Gdoc():
             self._data = json.loads(datafile.read())
             
     def iter_files(self, callback):
-        for name in self._zipfile.namelist():
+        for name in self.zipfile.namelist():
             match = re.match(r'[A-Z](\d+)\.pdf$', name)
 
             if match:
