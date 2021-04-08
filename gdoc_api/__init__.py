@@ -77,7 +77,7 @@ class Gdoc():
             self._data = json.loads(datafile.read())
             
     def iter_files(self, callback):
-        for name in self.zipfile.namelist():
+        for name in self._zipfile.namelist():
             match = re.match(r'[A-Z](\d+)\.pdf$', name)
 
             if match:
