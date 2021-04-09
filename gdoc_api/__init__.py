@@ -78,7 +78,7 @@ class Gdoc():
             
     def iter_files(self, callback):
         for name in self.zipfile.namelist():
-            match = re.match(r'[A-Z](\d+)\.pdf$', name)
+            match = re.match(r'[A-Z]+(\d+)\.pdf$', name)
 
             if match:
                 ods_num = int(match.group(1))
