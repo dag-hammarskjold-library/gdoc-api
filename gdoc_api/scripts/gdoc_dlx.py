@@ -8,14 +8,13 @@ from gdoc_api import Gdoc
 
 from gdoc_api import Gdoc
 from datetime import datetime, timezone
-g = Gdoc()
+api_secrets = {'token_url': 'https://some.url/token', 'userName': 'foo', 'password': 'bar', 'scope': ['some', 'scope']}
+g = Gdoc(api_secrets)
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 g.set_param('dateFrom', TODAY)
 g.set_param('dateTo', TODAY)
 g.set_param('dutyStation', 'NY')
 g.set_param('includeFiles', 'false')
-token = g.authenticate(endpoint URL, gDoc API Username, gDoc API Password,[scope, scope, ...])
-g.data(token)
 
 and so on...
 
@@ -69,22 +68,26 @@ def run():
     DLX.connect(args.dlx_connect)    
     S3.connect(args.s3_key_id, args.s3_key, args.s3_bucket)
 
-    g = Gdoc()
+    api_secrets = {
+        'token_url': args.token_url,
+        'userName': args.gdoc_api_username,
+        'password': args.gdoc_api_password,
+        'scope': args.api_scope.split(',')
+    }
+
+    g = Gdoc(api_secrets)
     g.set_param('symbol', args.symbol or '')
     g.set_param('dateFrom', args.date or TODAY)
     g.set_param('dateTo', args.date or TODAY)
     g.set_param('dutyStation', args.station or 'NY')
-
-    scope = arg.api_scope.split(',')
-    print(scope)
-
-    token = g.authenticate(args.token_url, args.gdoc_api_username, args.gdoc_api_password, )
     
     def upload(fh, data):
         symbols = [data['symbol1']]
         
         if data['symbol2'] and not data['symbol2'].isspace():
             symbols.append(data['symbol2'])
+
+        logging.info(symbols)
     
         if any([re.search(r'JOURNAL', x) for x in symbols]):
             logging.info('skipping {}'.format(symbols))
