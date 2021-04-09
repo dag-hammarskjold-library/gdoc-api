@@ -8,13 +8,15 @@ from gdoc_api import Gdoc
 
 from gdoc_api import Gdoc
 from datetime import datetime, timezone
-api_secrets = {'token_url': 'https://some.url/token', 'userName': 'foo', 'password': 'bar', 'scope': ['some', 'scope']}
-g = Gdoc(api_secrets)
+secrets = {"token_url": "some.url","userName": "foo","password": "bar","scope": ["scope1", "scope2"]}
+g = Gdoc(secrets)
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 g.set_param('dateFrom', TODAY)
 g.set_param('dateTo', TODAY)
 g.set_param('dutyStation', 'NY')
 g.set_param('includeFiles', 'false')
+g.download(g.token)
+g.data
 
 and so on...
 
