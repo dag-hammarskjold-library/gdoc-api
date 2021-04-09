@@ -47,13 +47,16 @@ def get_args():
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
     parser.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    print(str(args))
+    
+    return args 
 
 def set_log():
-    args = get_args()
+    #args = get_args()
+    pass
     
-    
-
 ###
 
 def run():
@@ -74,6 +77,8 @@ def run():
         'password': args.gdoc_api_password,
         'scope': args.api_scope.split(',')
     }
+    
+    print(api_secrets)
 
     g = Gdoc(api_secrets)
     g.set_param('symbol', args.symbol or '')
@@ -81,6 +86,8 @@ def run():
     g.set_param('dateTo', args.date or '')
     g.set_param('dutyStation', args.station or '')
     g.set_param('includeFiles', 'true')
+    
+    print(g.data)
     
     def upload(fh, data):
         symbols = [data['symbol1']]
@@ -121,13 +128,13 @@ def run():
         except Exception as e:
             raise e
             
-        
-            
     for result in g.iter_files(upload):
         if result:
             logging.info(f'OK - {result.id} {[x.value for x in result.identifiers]} {result.languages}')
     
     logging.info('Done')
+    
+    return '????'
 
 ### util
         
@@ -143,4 +150,4 @@ def encode_fn(symbols, language, extension):
 ###
 
 if __name__ == '__main__':
-    run()
+    print(run())
