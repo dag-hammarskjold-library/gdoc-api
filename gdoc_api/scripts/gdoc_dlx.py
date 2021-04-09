@@ -8,15 +8,13 @@ from gdoc_api import Gdoc
 
 from gdoc_api import Gdoc
 from datetime import datetime, timezone
-secrets = {"token_url": "some.url","userName": "foo","password": "bar","scope": ["scope1", "scope2"]}
-g = Gdoc(secrets)
+api_secrets = {'token_url': 'https://some.url/token', 'userName': 'foo', 'password': 'bar', 'scope': ['some', 'scope']}
+g = Gdoc(api_secrets)
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 g.set_param('dateFrom', TODAY)
 g.set_param('dateTo', TODAY)
 g.set_param('dutyStation', 'NY')
 g.set_param('includeFiles', 'false')
-g.download(g.token)
-g.data
 
 and so on...
 
@@ -79,9 +77,10 @@ def run():
 
     g = Gdoc(api_secrets)
     g.set_param('symbol', args.symbol or '')
-    g.set_param('dateFrom', args.date or TODAY)
-    g.set_param('dateTo', args.date or TODAY)
-    g.set_param('dutyStation', args.station or 'NY')
+    g.set_param('dateFrom', args.date or '')
+    g.set_param('dateTo', args.date or '')
+    g.set_param('dutyStation', args.station or '')
+    g.set_param('includeFiles', 'true')
     
     def upload(fh, data):
         symbols = [data['symbol1']]
