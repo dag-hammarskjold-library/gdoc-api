@@ -4,38 +4,21 @@ from dlx import DB as DLX
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
-''' OAuth2 Flow
-
-from gdoc_api import Gdoc
-from datetime import datetime, timezone
-api_secrets = {'token_url': 'https://some.url/token', 'userName': 'foo', 'password': 'bar', 'scope': ['some', 'scope']}
-g = Gdoc(api_secrets)
-TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-g.set_param('dateFrom', TODAY)
-g.set_param('dateTo', TODAY)
-g.set_param('dutyStation', 'NY')
-g.set_param('includeFiles', 'false')
-
-and so on...
-
-'''
-
-logging.basicConfig(filename='log', level=logging.INFO)
-sys.stderr = open('log', 'a')
-logging.info(sys.argv)
+logging.basicConfig(level=logging.INFO)
 
 def get_args():
-    parser = ArgumentParser(prog='gdoc-dlx')
+    parser = ArgumentParser(prog='gdoc-dlx') 
     
-    # required
+    # TODO: these should come from the AWS parameter store
+    # 
     parser.add_argument('--dlx_connect', required=True, help='MongoDB connection string')
     parser.add_argument('--s3_key_id', required=True)
     parser.add_argument('--s3_key', required=True)
     parser.add_argument('--s3_bucket', required=True)
-    parser.add_argument('--token_url', required=True)
     parser.add_argument('--gdoc_api_username', required=True)
     parser.add_argument('--gdoc_api_password', required=True)
-    parser.add_argument('--api_scope', required=True, help='comma separated list of API scopes, e.g., scope1,scope2')
+    
+    # required
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
     
     # at least one required
@@ -45,16 +28,12 @@ def get_args():
     
     # not required
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
-    parser.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
+    parser.add_argument('--overwrite', action='store_true', help='Ignore conflicts and overwrite exisiting DLX data')
     
-    args = parser.parse_args()
-    
-    print(str(args))
-    
-    return args 
+    return parser.parse_args()
 
 def set_log():
-    #args = get_args()
+    #args = get_args()uv
     pass
     
 ###
@@ -70,24 +49,13 @@ def run():
     
     DLX.connect(args.dlx_connect)    
     S3.connect(args.s3_key_id, args.s3_key, args.s3_bucket)
-
-    api_secrets = {
-        'token_url': args.token_url,
-        'userName': args.gdoc_api_username,
-        'password': args.gdoc_api_password,
-        'scope': args.api_scope.split(',')
-    }
     
-    print(api_secrets)
-
-    g = Gdoc(api_secrets)
+    g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
     g.set_param('symbol', args.symbol or '')
     g.set_param('dateFrom', args.date or '')
     g.set_param('dateTo', args.date or '')
     g.set_param('dutyStation', args.station or '')
     g.set_param('includeFiles', 'true')
-    
-    print(g.data)
     
     def upload(fh, data):
         symbols = [data['symbol1']]
@@ -118,7 +86,7 @@ def run():
                 identifiers=identifiers,
                 languages=languages,
                 mimetype='application/pdf',
-                source='gdoc-dlx-' + g.station,
+                source='gdoc-dlx-' + args.station,
                 overwrite=overwrite
             )
         except FileExistsConflict as e:
@@ -133,8 +101,6 @@ def run():
             logging.info(f'OK - {result.id} {[x.value for x in result.identifiers]} {result.languages}')
     
     logging.info('Done')
-    
-    return '????'
 
 ### util
         
@@ -150,4 +116,4 @@ def encode_fn(symbols, language, extension):
 ###
 
 if __name__ == '__main__':
-    print(run())
+    run()
