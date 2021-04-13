@@ -1,4 +1,4 @@
-import sys, re, logging
+import sys, re, logging, boto3
 from argparse import ArgumentParser
 from dlx import DB as DLX
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
@@ -9,11 +9,12 @@ logging.basicConfig(level=logging.INFO)
 def get_args():
     parser = ArgumentParser(prog='gdoc-dlx') 
     
-    # TODO: these should come from the AWS parameter store
-    # 
-    parser.add_argument('--dlx_connect', required=True, help='MongoDB connection string')
-    parser.add_argument('--s3_key_id', required=True)
-    parser.add_argument('--s3_key', required=True)
+    ssm = boto3.client('ssm')
+    
+    def param(name):
+        return ssm.get_parameter(Name=name)['Parameter']['Value']
+        
+    parser.add_argument('--dlx_connect', default=param('connect-string'))
     parser.add_argument('--s3_bucket', required=True)
     parser.add_argument('--gdoc_api_username', required=True)
     parser.add_argument('--gdoc_api_password', required=True)
@@ -33,7 +34,6 @@ def get_args():
     return parser.parse_args()
 
 def set_log():
-    #args = get_args()uv
     pass
     
 ###
@@ -48,7 +48,7 @@ def run():
         raise Exception('--language requires --symbol')
     
     DLX.connect(args.dlx_connect)    
-    S3.connect(args.s3_key_id, args.s3_key, args.s3_bucket)
+    S3.connect(bucket=args.s3_bucket) # this may change
     
     g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
     g.set_param('symbol', args.symbol or '')
@@ -56,7 +56,7 @@ def run():
     g.set_param('dateTo', args.date or '')
     g.set_param('dutyStation', args.station or '')
     g.set_param('includeFiles', 'true')
-    
+      
     def upload(fh, data):
         symbols = [data['symbol1']]
         
@@ -70,7 +70,7 @@ def run():
             return
         
         identifiers = [Identifier('symbol', x) for x in filter(None, symbols)]
-        lang = {'A': 'AR', 'C': 'ZH', 'E': 'EN', 'F': 'FR', 'R': 'RU', 'S': 'ES', 'G': 'DE'}[data['languageId']]    
+        lang = {'A': 'AR', 'C': 'ZH', 'E': 'EN', 'F': 'FR', 'R': 'RU', 'S': 'ES', 'G': 'DE'}[data['languageId']]
         
         if args.language and lang != args.language.upper():
             logging.info('Skipping ' + lang)
