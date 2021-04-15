@@ -6,15 +6,12 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 
-logging.basicConfig(filename='log', level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
-    def __init__(self, api_secrets, **kwargs):
-        self._data = {} 
-        self.api_secrets = api_secrets
-        self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
+    def __init__(self, *, username, password):
         self.base = 'https://gdoc.un.org/api/ods/getdocuments'
         self.parameters = {
             'dateFrom': '',
@@ -23,14 +20,27 @@ class Gdoc():
             'includeFiles': '',
             'symbol': ''
         }
-        self.token = self.authenticate(api_secrets['token_url'], api_secrets['userName'], api_secrets['password'], api_secrets['scope'])
+        self._data = {}
+        self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
+        
+        # authenticate
+        scope = ["gDoc1APIAccess", "gDocFilesAPIAccess"]
+        auth = HTTPBasicAuth(username, password)
+        client = BackendApplicationClient(client_id=password)
+        oauth = OAuth2Session(client=client, scope=scope)
+        
+        self.token = oauth.fetch_token(
+            token_url='https://conferences.unite.un.org/ucid/connect/token', 
+            auth=auth, 
+            scope=scope
+        )
         
     @property
     def data(self):
         if self._data:
             return self._data
 
-        self.download(self.token)
+        self.download()
         
         return self._data
     
@@ -39,27 +49,18 @@ class Gdoc():
         if self._zipfile:
             return self._zipfile
         
-        self.download(self.token)
+        self.download()
         
         return self._zipfile
         
     def set_param(self, name, value):
         self.parameters[name] = value
-        
-    def authenticate(self, token_url, client_id, client_secret, scope):
-        auth = HTTPBasicAuth(client_id, client_secret)
-        client = BackendApplicationClient(client_id=client_id)
-        oauth = OAuth2Session(client=client, scope=scope)
-        token = oauth.fetch_token(token_url=token_url, auth=auth, scope=scope)
 
-        return token
-
-    
-    def download(self, token):
+    def download(self):
         temp = TemporaryFile('wb+')
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
         logging.info(url)
-        headers = {"Authorization": f"Bearer {token['access_token']}"}
+        headers = {"Authorization": f"Bearer {self.token['access_token']}"}
         response = requests.get(url, stream=True, headers=headers)
         
         if response.status_code == 200:
@@ -88,3 +89,8 @@ class Gdoc():
                     logging.warning('Data for "{}" not found in zip file'.format(name))
                     
                 yield callback(self.zipfile.open(name), file_data)
+            elif name[-4:] == '.pdf':
+                logging.warn(f'{name} not found')
+                
+class Schema():
+    pass

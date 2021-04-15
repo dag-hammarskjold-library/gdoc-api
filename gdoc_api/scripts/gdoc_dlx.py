@@ -1,41 +1,15 @@
-import sys, re, logging
+import sys, re, logging, json, boto3
 from argparse import ArgumentParser
 from dlx import DB as DLX
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
-''' OAuth2 Flow
-
-from gdoc_api import Gdoc
-from datetime import datetime, timezone
-api_secrets = {'token_url': 'https://some.url/token', 'userName': 'foo', 'password': 'bar', 'scope': ['some', 'scope']}
-g = Gdoc(api_secrets)
-TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-g.set_param('dateFrom', TODAY)
-g.set_param('dateTo', TODAY)
-g.set_param('dutyStation', 'NY')
-g.set_param('includeFiles', 'false')
-
-and so on...
-
-'''
-
-logging.basicConfig(filename='log', level=logging.INFO)
-sys.stderr = open('log', 'a')
-logging.info(sys.argv)
+logging.basicConfig(level=logging.INFO)
 
 def get_args():
     parser = ArgumentParser(prog='gdoc-dlx')
     
     # required
-    parser.add_argument('--dlx_connect', required=True, help='MongoDB connection string')
-    parser.add_argument('--s3_key_id', required=True)
-    parser.add_argument('--s3_key', required=True)
-    parser.add_argument('--s3_bucket', required=True)
-    parser.add_argument('--token_url', required=True)
-    parser.add_argument('--gdoc_api_username', required=True)
-    parser.add_argument('--gdoc_api_password', required=True)
-    parser.add_argument('--api_scope', required=True, help='comma separated list of API scopes, e.g., scope1,scope2')
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
     
     # at least one required
@@ -45,15 +19,24 @@ def get_args():
     
     # not required
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
-    parser.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
+    parser.add_argument('--overwrite', action='store_true', help='Ignore conflicts and overwrite exisiting DLX data')
     
+    # get from AWS if not provided
+    ssm = boto3.client('ssm')
+    
+    def param(name):
+        return ssm.get_parameter(Name=name)['Parameter']['Value']
+
+    parser.add_argument('--dlx_connect', default=param('connect-string'))
+    parser.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
+    parser.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
+    parser.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
+
     return parser.parse_args()
 
 def set_log():
-    args = get_args()
+    pass
     
-    
-
 ###
 
 def run():
@@ -66,22 +49,15 @@ def run():
         raise Exception('--language requires --symbol')
     
     DLX.connect(args.dlx_connect)    
-    S3.connect(args.s3_key_id, args.s3_key, args.s3_bucket)
-
-    api_secrets = {
-        'token_url': args.token_url,
-        'userName': args.gdoc_api_username,
-        'password': args.gdoc_api_password,
-        'scope': args.api_scope.split(',')
-    }
-
-    g = Gdoc(api_secrets)
+    S3.connect(bucket=args.s3_bucket) # this may change
+    
+    g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
     g.set_param('symbol', args.symbol or '')
     g.set_param('dateFrom', args.date or '')
     g.set_param('dateTo', args.date or '')
     g.set_param('dutyStation', args.station or '')
     g.set_param('includeFiles', 'true')
-    
+      
     def upload(fh, data):
         symbols = [data['symbol1']]
         
@@ -95,7 +71,7 @@ def run():
             return
         
         identifiers = [Identifier('symbol', x) for x in filter(None, symbols)]
-        lang = {'A': 'AR', 'C': 'ZH', 'E': 'EN', 'F': 'FR', 'R': 'RU', 'S': 'ES', 'G': 'DE'}[data['languageId']]    
+        lang = {'A': 'AR', 'C': 'ZH', 'E': 'EN', 'F': 'FR', 'R': 'RU', 'S': 'ES', 'G': 'DE'}[data['languageId']]
         
         if args.language and lang != args.language.upper():
             logging.info('Skipping ' + lang)
@@ -111,7 +87,7 @@ def run():
                 identifiers=identifiers,
                 languages=languages,
                 mimetype='application/pdf',
-                source='gdoc-dlx-' + g.station,
+                source='gdoc-dlx-' + args.station,
                 overwrite=overwrite
             )
         except FileExistsConflict as e:
@@ -120,8 +96,6 @@ def run():
             logging.info(f'{symbols} {languages} is already in the system')
         except Exception as e:
             raise e
-            
-        
             
     for result in g.iter_files(upload):
         if result:
