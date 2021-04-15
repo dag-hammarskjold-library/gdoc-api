@@ -7,17 +7,7 @@ from gdoc_api import Gdoc
 logging.basicConfig(level=logging.INFO)
 
 def get_args():
-    parser = ArgumentParser(prog='gdoc-dlx') 
-    
-    ssm = boto3.client('ssm')
-    
-    def param(name):
-        return ssm.get_parameter(Name=name)['Parameter']['Value']
-
-    parser.add_argument('--dlx_connect', default=param('connect-string'))
-    parser.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
-    parser.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
-    parser.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
+    parser = ArgumentParser(prog='gdoc-dlx')
     
     # required
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
@@ -31,6 +21,17 @@ def get_args():
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
     parser.add_argument('--overwrite', action='store_true', help='Ignore conflicts and overwrite exisiting DLX data')
     
+    # get from AWS if not provided
+    ssm = boto3.client('ssm')
+    
+    def param(name):
+        return ssm.get_parameter(Name=name)['Parameter']['Value']
+
+    parser.add_argument('--dlx_connect', default=param('connect-string'))
+    parser.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
+    parser.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
+    parser.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
+
     return parser.parse_args()
 
 def set_log():
