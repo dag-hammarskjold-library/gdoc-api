@@ -1,4 +1,4 @@
-import sys, re, logging, boto3
+import sys, re, logging, json, boto3
 from argparse import ArgumentParser
 from dlx import DB as DLX
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
@@ -13,11 +13,11 @@ def get_args():
     
     def param(name):
         return ssm.get_parameter(Name=name)['Parameter']['Value']
-        
+
     parser.add_argument('--dlx_connect', default=param('connect-string'))
-    parser.add_argument('--s3_bucket', required=True)
-    parser.add_argument('--gdoc_api_username', required=True)
-    parser.add_argument('--gdoc_api_password', required=True)
+    parser.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
+    parser.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
+    parser.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
     
     # required
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
