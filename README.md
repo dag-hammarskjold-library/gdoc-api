@@ -26,24 +26,17 @@ g.iter_files(todo)
 Gets files from Gdoc and imports them into DLX
 
 Usage (command line):
+```bash
+gdoc-dlx --help
 ```
-usage: 
-    gdoc-dlx [-h] --station {NY,GE} (--date DATE | --symbol SYMBOL) [--language {A,C,E,F,R,S,O}] [--overwrite]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --dlx_connect DLX_CONNECT
-                        MongoDB connection string
-  --s3_key_id S3_KEY_ID
-  --s3_key S3_KEY
-  --s3_bucket S3_BUCKET
-  --gdoc_api_username GDOC_API_USERNAME
-  --gdoc_api_password GDOC_API_PASSWORD
-  --gdoc_username GDOC_USERNAME
-  --gdoc_password GDOC_PASSWORD
-  --station {NY,GE}
-  --date DATE           YYYY-MM-DD
-  --symbol SYMBOL
-  --language {A,C,E,F,R,S,O}
-  --overwrite           Ignore conflicts and overwrite exisiting DLX data
+```bash
+gdoc-dlx --station=NY --date=2021-01-03
+```
+
+As a function (Python):
+```python
+from gdoc_api.scripts import gdoc_dlx
+
+gdoc_dlx.run(station=NY, date=2021-01-03)
 ```

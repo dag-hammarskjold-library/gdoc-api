@@ -1,4 +1,4 @@
-import logging, requests, urllib, json, re
+import os, logging, requests, urllib, json, re
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
 from zipfile import ZipFile
@@ -8,11 +8,12 @@ from requests.auth import HTTPBasicAuth
 
 logging.basicConfig(level=logging.INFO)
 
+API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
     def __init__(self, *, username, password):
-        self.base = 'https://gdoc.un.org/api/ods/getdocuments'
+        self.base = API_URL
         self.parameters = {
             'dateFrom': '',
             'dateTo': '',
@@ -24,16 +25,17 @@ class Gdoc():
         self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
         
         # authenticate
-        scope = ["gDoc1APIAccess", "gDocFilesAPIAccess"]
-        auth = HTTPBasicAuth(username, password)
-        client = BackendApplicationClient(client_id=password)
-        oauth = OAuth2Session(client=client, scope=scope)
+        if 'GDOC_API_TESTING' not in os.environ:
+            scope = ["gDoc1APIAccess", "gDocFilesAPIAccess"]
+            auth = HTTPBasicAuth(username, password)
+            client = BackendApplicationClient(client_id=password)
+            oauth = OAuth2Session(client=client, scope=scope)
         
-        self.token = oauth.fetch_token(
-            token_url='https://conferences.unite.un.org/ucid/connect/token', 
-            auth=auth, 
-            scope=scope
-        )
+            self.token = oauth.fetch_token(
+                token_url='https://conferences.unite.un.org/ucid/connect/token', 
+                auth=auth, 
+                scope=scope
+            )
         
     @property
     def data(self):
@@ -60,7 +62,7 @@ class Gdoc():
         temp = TemporaryFile('wb+')
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
         logging.info(url)
-        headers = {"Authorization": f"Bearer {self.token['access_token']}"}
+        headers = {"Authorization": f"Bearer {self.token['access_token']}"} if 'GDOC_API_TESTING' not in os.environ else None
         response = requests.get(url, stream=True, headers=headers)
         
         if response.status_code == 200:
