@@ -13,9 +13,9 @@ def get_args():
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
     
     # at least one required
-    c = parser.add_mutually_exclusive_group(required=True)
-    c.add_argument('--date', help='YYYY-MM-DD')
-    c.add_argument('--symbol')
+    g = parser.add_mutually_exclusive_group(required=True)
+    g.add_argument('--date', help='YYYY-MM-DD')
+    g.add_argument('--symbol')
     
     # not required
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
@@ -39,7 +39,15 @@ def set_log():
     
 ###
 
-def run():
+def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
+    if station: sys.argv.append(f'--station={station}')
+    if date: sys.argv.append(f'--date={date}')
+    if language: sys.argv.append(f'--language={language}')
+    if overwrite: sys.argv.append('--overwrite')
+    
+    if kwargs.get('s3_bucket'):
+        sys.argv.append(f'--s3_bucket={kwargs["s3_bucket"]}')
+       
     args = get_args()
     
     if not args.date and not args.symbol:
@@ -64,7 +72,7 @@ def run():
         if data['symbol2'] and not data['symbol2'].isspace():
             symbols.append(data['symbol2'])
 
-        logging.info(symbols)
+        logging.info(f"{symbols} {[data['languageId']]} -->")
     
         if any([re.search(r'JOURNAL', x) for x in symbols]):
             logging.info('skipping {}'.format(symbols))
