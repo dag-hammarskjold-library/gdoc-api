@@ -1,12 +1,10 @@
-import os, logging, requests, urllib, json, re
+import os, requests, urllib, json, re
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
 from zipfile import ZipFile
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
-
-logging.basicConfig(level=logging.INFO)
 
 API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
@@ -61,17 +59,17 @@ class Gdoc():
     def download(self):
         temp = TemporaryFile('wb+')
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
-        logging.info(url)
         headers = {"Authorization": f"Bearer {self.token['access_token']}"} if 'GDOC_API_TESTING' not in os.environ else None
+        print(json.dumps({'info': f'Getting {url}'}))
         response = requests.get(url, stream=True, headers=headers)
         
         if response.status_code == 200:
-            logging.info('OK')
+            print(json.dumps({'info': 'Connection established'}))
             
             for chunk in response.iter_content(8192):
                 temp.write(chunk)
         else:
-            logging.error(response.text)
+            print(json.dumps({'error': 'API error', 'data': {'URL': url, 'response': reponse.text}}))
             raise Exception(response.text)
                 
         self._zipfile = ZipFile(temp)
@@ -88,11 +86,11 @@ class Gdoc():
                 file_data = next(filter(lambda x: x['odsNo'] == ods_num, self.data), None)
                 
                 if file_data is None:
-                    logging.warning('Data for "{}" not found in zip file'.format(name))
+                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file', 'data': file_data}))
                     
                 yield callback(self.zipfile.open(name), file_data)
             elif name[-4:] == '.pdf':
-                logging.warn(f'{name} not found')
+                print(json.dumps({'warning': f'File "{name}" not found in zip file', 'data': file_data}))
                 
 class Schema():
     pass
