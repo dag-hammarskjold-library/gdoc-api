@@ -1,10 +1,8 @@
-import sys, re, logging, json, boto3
+import sys, re, json, boto3
 from argparse import ArgumentParser
 from dlx import DB as DLX
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
-
-logging.basicConfig(level=logging.INFO)
 
 def get_args():
     parser = ArgumentParser(prog='gdoc-dlx')
@@ -71,18 +69,14 @@ def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
         
         if data['symbol2'] and not data['symbol2'].isspace():
             symbols.append(data['symbol2'])
-
-        logging.info(f"{symbols} {[data['languageId']]} -->")
     
         if any([re.search(r'JOURNAL', x) for x in symbols]):
-            logging.info('skipping {}'.format(symbols))
             return
         
         identifiers = [Identifier('symbol', x) for x in filter(None, symbols)]
         lang = {'A': 'AR', 'C': 'ZH', 'E': 'EN', 'F': 'FR', 'R': 'RU', 'S': 'ES', 'G': 'DE'}[data['languageId']]
         
         if args.language and lang != args.language.upper():
-            logging.info('Skipping ' + lang)
             return
         
         languages = [lang]
@@ -99,17 +93,23 @@ def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
                 overwrite=overwrite
             )
         except FileExistsConflict as e:
-            logging.warning(f'{symbols} {languages} {e.message}')
+            print(json.dumps({'warning': e.message, 'data': {'symbols': symbols, 'language': languages}}))
         except FileExists:
-            logging.info(f'{symbols} {languages} is already in the system')
+            print(json.dumps({'info': 'Already in the system', 'data': {'symbols': symbols, 'language': languages}}))
         except Exception as e:
+            print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e))), 'data': {'symbols': symbols, 'languages': languages}}))
             raise e
-            
+    
+    i = 0
+    
     for result in g.iter_files(upload):
         if result:
-            logging.info(f'OK - {result.id} {[x.value for x in result.identifiers]} {result.languages}')
-    
-    logging.info('Done')
+            print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': [x.value for x in result.identifiers], 'languages': result.languages}}))
+        
+        i += 1
+        
+    if i == 0:
+        print(json.dumps({'info': 'No results', 'data': {'station': args.station, 'date': args.date, 'symbols': args.symbol, 'language': args.language}}))
 
 ### util
         
