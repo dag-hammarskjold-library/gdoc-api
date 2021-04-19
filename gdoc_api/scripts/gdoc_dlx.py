@@ -38,8 +38,11 @@ def set_log():
 ###
 
 def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
-    if station: sys.argv.append(f'--station={station}')
-    if date: sys.argv.append(f'--date={date}')
+    if station or date:
+        sys.argv = [sys.argv[0]]
+        sys.argv.append(f'--station={station}')
+        sys.argv.append(f'--date={date}')
+    
     if language: sys.argv.append(f'--language={language}')
     if overwrite: sys.argv.append('--overwrite')
     
