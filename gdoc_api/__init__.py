@@ -69,7 +69,7 @@ class Gdoc():
             for chunk in response.iter_content(8192):
                 temp.write(chunk)
         else:
-            print(json.dumps({'error': 'API error', 'data': {'URL': url, 'response': reponse.text}}))
+            print(json.dumps({'error': 'API error', 'data': {'URL': url, 'response': response.text}}))
             raise Exception(response.text)
                 
         self._zipfile = ZipFile(temp)
