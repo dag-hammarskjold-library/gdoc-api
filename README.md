@@ -23,12 +23,38 @@ g.iter_files(todo)
 
 #### Scripts
 > #### gdoc-dlx
-Gets files from Gdoc and imports them into DLX
+Gets files from Gdoc and imports them into DLX. Prints log to STDOUT
 
 Usage (command line):
 ```bash
 gdoc-dlx --help
 ```
+
+>usage: gdoc-dlx [-h] --station {NY,GE} --date DATE [--symbol SYMBOL] [--language {A,C,E,F,R,S,O}] [--overwrite] [--dlx_connect DLX_CONNECT] [--s3_bucket S3_BUCKET]
+>                [--gdoc_api_username GDOC_API_USERNAME] [--gdoc_api_password GDOC_API_PASSWORD]
+>
+>optional arguments:
+>  -h, --help            show this help message and exit
+>
+>required:
+>  --station {NY,GE}
+>  --date DATE           YYYY-MM-DD
+>
+>not required:
+>  --symbol SYMBOL       get only the files for the specified symbol
+>  --language {A,C,E,F,R,S,O}
+>                        get only the files for the specified language
+>  --overwrite           ignore conflicts and overwrite exisiting DLX data
+>
+>credentials:
+>  these arguments are supplied by AWS SSM if AWS credentials are configured
+>
+>  --dlx_connect DLX_CONNECT
+>  --s3_bucket S3_BUCKET
+>  --gdoc_api_username GDOC_API_USERNAME
+>  --gdoc_api_password GDOC_API_PASSWORD
+
+
 
 ```bash
 gdoc-dlx --station=NY --date=2021-01-03
@@ -38,5 +64,5 @@ As a function (Python):
 ```python
 from gdoc_api.scripts import gdoc_dlx
 
-gdoc_dlx.run(station=NY, date=2021-01-03)
+gdoc_dlx.run(station=NY, date=2021-01-03)	
 ```

@@ -7,25 +7,30 @@ from gdoc_api import Gdoc
 def get_args():
     parser = ArgumentParser(prog='gdoc-dlx')
     
-    # required
-    parser.add_argument('--station', required=True, choices=['NY', 'GE'])
-    parser.add_argument('--date', required=True, help='YYYY-MM-DD')
+    r = parser.add_argument_group('required')
+    r.add_argument('--station', required=True, choices=['NY', 'GE'])
+    r.add_argument('--date', required=True, help='YYYY-MM-DD')
 
-    # not required
-    parser.add_argument('--symbol')
-    parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
-    parser.add_argument('--overwrite', action='store_true', help='Ignore conflicts and overwrite exisiting DLX data')
+    nr = parser.add_argument_group('not required')
+    nr.add_argument('--symbol', help='get only the files for the specified symbol')
+    nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'], help='get only the files for the specified language')
+    nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     
     # get from AWS if not provided
     ssm = boto3.client('ssm')
     
     def param(name):
         return ssm.get_parameter(Name=name)['Parameter']['Value']
-
-    parser.add_argument('--dlx_connect', default=param('connect-string'))
-    parser.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
-    parser.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
-    parser.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
+    
+    c = parser.add_argument_group(
+        title='credentials', 
+        description='these arguments are supplied by AWS SSM if AWS credentials are configured',
+        
+    )
+    c.add_argument('--dlx_connect', default=param('connect-string'))
+    c.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
+    c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
+    c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
 
     return parser.parse_args()
 
