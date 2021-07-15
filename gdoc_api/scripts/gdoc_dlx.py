@@ -9,13 +9,10 @@ def get_args():
     
     # required
     parser.add_argument('--station', required=True, choices=['NY', 'GE'])
-    
-    # at least one required
-    g = parser.add_mutually_exclusive_group(required=True)
-    g.add_argument('--date', help='YYYY-MM-DD')
-    g.add_argument('--symbol')
-    
+    parser.add_argument('--date', required=True, help='YYYY-MM-DD')
+
     # not required
+    parser.add_argument('--symbol')
     parser.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'])
     parser.add_argument('--overwrite', action='store_true', help='Ignore conflicts and overwrite exisiting DLX data')
     

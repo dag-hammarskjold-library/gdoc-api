@@ -1,8 +1,7 @@
 """
-Runs gdoc-dlx for every day since the first known date of the gDoc feed.
-Completed days are recorded in the database and the script automatically
-starts from the last completed day. Logs are printed to STDOUT for capture 
-in CloudWatch
+Runs gdoc-dlx for one day. Completed days are recorded in the database. The
+script runs for the next day after that last completed one. Logs are printed to
+STDOUT for capture in CloudWatch
 
 Usage:
     from gdoc_api.scripts import gdoc_dlx_retro
