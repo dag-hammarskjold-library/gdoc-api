@@ -13,8 +13,9 @@ def get_args():
 
     nr = parser.add_argument_group('not required')
     nr.add_argument('--symbol', help='get only the files for the specified symbol')
-    nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'O'], help='get only the files for the specified language')
+    nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
+    nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
     
     # get from AWS if not provided
     ssm = boto3.client('ssm')
@@ -39,15 +40,17 @@ def set_log():
     
 ###
 
-def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
+def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, recursive=None, **kwargs):
     if station or date:
         sys.argv = [sys.argv[0]]
         sys.argv.append(f'--station={station}')
         sys.argv.append(f'--date={date}')
-    
+
+    if symbol: sys.argv.append(f'--symbol={symbol}')
     if language: sys.argv.append(f'--language={language}')
     if overwrite: sys.argv.append('--overwrite')
-    
+    if recursive: sys.argv.append('--recursive')
+        
     if kwargs.get('s3_bucket'):
         sys.argv.append(f'--s3_bucket={kwargs["s3_bucket"]}')
        
@@ -67,7 +70,22 @@ def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
     g.set_param('dateFrom', args.date or '')
     g.set_param('dateTo', args.date or '')
     g.set_param('dutyStation', args.station or '')
-    g.set_param('includeFiles', 'true')
+
+    if not args.recursive:
+        g.set_param('includeFiles', 'true')
+    else:
+        seen = {}
+        
+        for data in g.data:
+            symbol = symbol=data['symbol1']
+            
+            if seen.get(symbol):
+                continue
+            
+            run(station=args.station, date=args.date, symbol=symbol)
+            seen[symbol] = True;
+
+        return
       
     def upload(fh, data):
         symbols = [data['symbol1']]
@@ -78,19 +96,19 @@ def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
         if any([re.search(r'JOURNAL', x) for x in symbols]):
             return
         
-        identifiers = [Identifier('symbol', x) for x in filter(None, symbols)]
         lang = {'A': 'AR', 'C': 'ZH', 'E': 'EN', 'F': 'FR', 'R': 'RU', 'S': 'ES', 'G': 'DE'}[data['languageId']]
         
-        if args.language and lang != args.language.upper():
+        if args.language and args.language.upper() != data['languageId']:
             return
         
+        identifiers = [Identifier('symbol', x) for x in filter(None, symbols)]
         languages = [lang]
         overwrite = True if args.overwrite else False
 
         try:
             return File.import_from_handle(
                 fh,
-                filename=encode_fn(list(filter(None, symbols)), languages[0], 'pdf'),
+                filename=encode_fn(list(filter(None, symbols)), lang, 'pdf'),
                 identifiers=identifiers,
                 languages=languages,
                 mimetype='application/pdf',
@@ -103,15 +121,17 @@ def run(*, station=None, date=None, language=None, overwrite=None, **kwargs):
             print(json.dumps({'info': 'Already in the system', 'data': {'symbols': symbols, 'language': languages}}))
         except Exception as e:
             print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e))), 'data': {'symbols': symbols, 'languages': languages}}))
-            raise e
     
     i = 0
     
-    for result in g.iter_files(upload):
-        if result:
-            print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': [x.value for x in result.identifiers], 'languages': result.languages}}))
-        
-        i += 1
+    try:
+        for result in g.iter_files(upload):
+            if isinstance(result, File):
+                print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': [x.value for x in result.identifiers], 'languages': result.languages}}))
+
+                i += 1
+    except Exception as e:
+        print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
         
     if i == 0:
         print(json.dumps({'info': 'No results', 'data': {'station': args.station, 'date': args.date, 'symbols': args.symbol, 'language': args.language}}))

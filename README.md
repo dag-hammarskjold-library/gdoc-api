@@ -30,8 +30,8 @@ Gets files from Gdoc and imports them into DLX. Prints log to STDOUT
 gdoc-dlx --help
 ```
 ```
-usage: gdoc-dlx [-h] --station {NY,GE} --date DATE [--symbol SYMBOL] [--language {A,C,E,F,R,S,O}] [--overwrite] [--dlx_connect DLX_CONNECT] [--s3_bucket S3_BUCKET]
-                [--gdoc_api_username GDOC_API_USERNAME] [--gdoc_api_password GDOC_API_PASSWORD]
+usage: gdoc-dlx [-h] --station {NY,GE} --date DATE [--symbol SYMBOL] [--language {A,C,E,F,R,S,G}] [--overwrite] [--recursive] [--dlx_connect DLX_CONNECT]
+                [--s3_bucket S3_BUCKET] [--gdoc_api_username GDOC_API_USERNAME] [--gdoc_api_password GDOC_API_PASSWORD]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -42,9 +42,10 @@ required:
 
 not required:
   --symbol SYMBOL       get only the files for the specified symbol
-  --language {A,C,E,F,R,S,O}
+  --language {A,C,E,F,R,S,G}
                         get only the files for the specified language
   --overwrite           ignore conflicts and overwrite exisiting DLX data
+  --recursive           download the files one symbol at a time
 
 credentials:
   these arguments are supplied by AWS SSM if AWS credentials are configured

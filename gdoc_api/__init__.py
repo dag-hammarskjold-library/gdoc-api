@@ -68,14 +68,13 @@ class Gdoc():
             
             for chunk in response.iter_content(8192):
                 temp.write(chunk)
-        else:
-            print(json.dumps({'error': 'API error', 'data': {'URL': url, 'response': response.text}}))
-            raise Exception(response.text)
                 
-        self._zipfile = ZipFile(temp)
+            self._zipfile = ZipFile(temp)
         
-        with self._zipfile.open('export.txt') as datafile:
-            self._data = json.loads(datafile.read())
+            with self._zipfile.open('export.txt') as datafile:
+                self._data = json.loads(datafile.read())
+        else:
+            raise Exception('API error:\n' + response.text)
             
     def iter_files(self, callback):
         for name in self.zipfile.namelist():
