@@ -108,7 +108,7 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
         try:
             return File.import_from_handle(
                 fh,
-                filename=encode_fn(list(filter(None, symbols)), lang, 'pdf'),
+                filename=File.encode_fn(list(filter(None, symbols)), lang, 'pdf'),
                 identifiers=identifiers,
                 languages=languages,
                 mimetype='application/pdf',
@@ -126,26 +126,16 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
     
     try:
         for result in g.iter_files(upload):
+            i += 1
+            
             if isinstance(result, File):
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': [x.value for x in result.identifiers], 'languages': result.languages}}))
 
-                i += 1
     except Exception as e:
         print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
         
     if i == 0:
         print(json.dumps({'info': 'No results', 'data': {'station': args.station, 'date': args.date, 'symbols': args.symbol, 'language': args.language}}))
-
-### util
-        
-from dlx.util import ISO6391
-
-def encode_fn(symbols, language, extension):
-    ISO6391.codes[language.lower()]
-    symbols = [symbols] if isinstance(symbols, str) else symbols
-    xsymbols = [sym.translate(str.maketrans(' /[]*:;', '__^^!#%')) for sym in symbols]
-
-    return '{}-{}.{}'.format('&'.join(xsymbols), language.upper(), extension)
     
 ###
 

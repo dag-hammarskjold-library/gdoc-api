@@ -27,7 +27,7 @@ def run():
         next_date = last_record['issue_date'] + timedelta(days=1)
     
     for station in ('NY', 'GE'):
-        gdoc_dlx.run(station=station, date=next_date.strftime('%Y-%m-%d'))
+        gdoc_dlx.run(station=station, date=next_date.strftime('%Y-%m-%d'), recursive=True)
         
     col.insert_one({'issue_date': next_date, 'completed': datetime.now()})
 
