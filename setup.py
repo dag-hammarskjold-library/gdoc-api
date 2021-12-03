@@ -9,7 +9,7 @@ with open("requirements.txt") as f:
 
 setup(
     name = 'gdoc_api',
-    version = '0.1',
+    version = '0.2',
     url = None,
     author = 'United Nations Dag Hammarskjöld Library',
     author_email = 'library-ny@un.org',
