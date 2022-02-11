@@ -88,6 +88,11 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
         return
       
     def upload(fh, data):
+        if data['distributionType'] == 'RES':
+            print(json.dumps({'warning': 'Skipping document with distribution type "RES"', 'symbol': data['symbol1']}))
+            
+            return
+        
         symbols = [data['symbol1']]
         
         if data['symbol2'] and not data['symbol2'].isspace():
