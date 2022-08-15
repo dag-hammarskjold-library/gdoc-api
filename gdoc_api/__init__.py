@@ -73,8 +73,15 @@ class Gdoc():
         
             with self._zipfile.open('export.txt') as datafile:
                 self._data = json.loads(datafile.read())
+                
+            for d in self.data:
+                found = list(filter(lambda x: re.match(f'[A-Z]+({d["odsNo"]}.pdf)', x), self.zipfile.namelist()))
+            
+                if len(found) == 0:
+                    print(json.dumps({'warning': f'File for {d["symbol1"]} not found in feed'}))
         else:
             raise Exception('API error:\n' + response.text)
+            
             
     def iter_files(self, callback):
         for name in self.zipfile.namelist():
@@ -90,6 +97,7 @@ class Gdoc():
                 yield callback(self.zipfile.open(name), file_data)
             elif name[-4:] == '.pdf':
                 print(json.dumps({'warning': f'File "{name}" not found in zip file', 'data': file_data}))
+                
                 
 class Schema():
     pass
