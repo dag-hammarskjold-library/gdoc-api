@@ -6,7 +6,8 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 
-API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
+#API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
+API_URL = 'http://conferences.unite.un.org/gdoc-data/api/odsdata/getodsdocuments'
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
@@ -24,7 +25,7 @@ class Gdoc():
         
         # authenticate
         if 'GDOC_API_TESTING' not in os.environ:
-            scope = ["gDoc1APIAccess", "gDocFilesAPIAccess"]
+            scope = ["gDoc2DataAPIAccess", "gDocFilesAPIAccess"]
             auth = HTTPBasicAuth(username, password)
             client = BackendApplicationClient(client_id=password)
             oauth = OAuth2Session(client=client, scope=scope)
