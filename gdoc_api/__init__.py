@@ -30,7 +30,7 @@ class Gdoc():
             oauth = OAuth2Session(client=client, scope=scope)
         
             self.token = oauth.fetch_token(
-                token_url='https://conferences.unite.un.org/ucid/connect/token', 
+                token_url='https://conferences.unite.un.org/ucid4/connect/token', 
                 auth=auth, 
                 scope=scope
             )
