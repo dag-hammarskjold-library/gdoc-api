@@ -92,7 +92,7 @@ class Gdoc():
             if match:
                 # This changed to jobId in gDoc 2
                 ods_num = int(match.group(1))
-                file_data = next(filter(lambda x: x['jobId'] == ods_num, self.data), None)
+                file_data = next(filter(lambda x: x['jobId'] == str(ods_num), self.data), None)
                 
                 if file_data is None:
                     print(json.dumps({'warning': f'Data for "{name}" not found in zip file', 'data': file_data}))
