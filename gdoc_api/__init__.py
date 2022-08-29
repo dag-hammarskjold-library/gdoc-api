@@ -79,7 +79,7 @@ class Gdoc():
             for d in self.data:
                 found = list(filter(lambda x: re.match(f'[A-Z]+({d["jobId"]}.pdf)', x), self.zipfile.namelist()))
             
-                if len(found) == 0:
+                if self.parameters['DownloadFiles'] == 'Y' and len(found) == 0:
                     print(json.dumps({'warning': f'File for {d["symbol1"]} not found in feed'}))
         else:
             raise Exception('API error:\n' + response.text)
