@@ -17,8 +17,9 @@ class Gdoc():
             'dateFrom': '',
             'dateTo': '',
             'dutyStation': '',
-            'includeFiles': '',
-            'symbol': ''
+            'DownloadFiles': '',
+            'symbol': '',
+            'Odsstatus': 'N'
         }
         self._data = {}
         self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
@@ -76,7 +77,7 @@ class Gdoc():
                 self._data = json.loads(datafile.read())
                 
             for d in self.data:
-                found = list(filter(lambda x: re.match(f'[A-Z]+({d["odsNo"]}.pdf)', x), self.zipfile.namelist()))
+                found = list(filter(lambda x: re.match(f'[A-Z]+({d["jobId"]}.pdf)', x), self.zipfile.namelist()))
             
                 if len(found) == 0:
                     print(json.dumps({'warning': f'File for {d["symbol1"]} not found in feed'}))
@@ -89,8 +90,9 @@ class Gdoc():
             match = re.match(r'[A-Z]+(\d+)\.pdf$', name)
 
             if match:
+                # This changed to jobId in gDoc 2
                 ods_num = int(match.group(1))
-                file_data = next(filter(lambda x: x['odsNo'] == ods_num, self.data), None)
+                file_data = next(filter(lambda x: x['jobId'] == ods_num, self.data), None)
                 
                 if file_data is None:
                     print(json.dumps({'warning': f'Data for "{name}" not found in zip file', 'data': file_data}))
