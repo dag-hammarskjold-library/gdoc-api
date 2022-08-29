@@ -72,7 +72,8 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
     g.set_param('dutyStation', args.station or '')
 
     if not args.recursive:
-        g.set_param('includeFiles', 'true')
+        #g.set_param('includeFiles', 'true')
+        g.set_param('DownloadFiles', 'Y')
     else:
         seen = {}
         
