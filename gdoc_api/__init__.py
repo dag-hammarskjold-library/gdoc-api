@@ -6,7 +6,8 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 
-API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
+#API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
+API_URL = 'http://conferences.unite.un.org/gdoc-data/api/odsdata/getodsdocuments'
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
@@ -16,15 +17,16 @@ class Gdoc():
             'dateFrom': '',
             'dateTo': '',
             'dutyStation': '',
-            'includeFiles': '',
-            'symbol': ''
+            'DownloadFiles': '',
+            'symbol': '',
+            'Odsstatus': 'N'
         }
         self._data = {}
         self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
         
         # authenticate
         if 'GDOC_API_TESTING' not in os.environ:
-            scope = ["gDoc1APIAccess", "gDocFilesAPIAccess"]
+            scope = ["gDoc2DataAPIAccess", "gDocFilesAPIAccess"]
             auth = HTTPBasicAuth(username, password)
             client = BackendApplicationClient(client_id=password)
             oauth = OAuth2Session(client=client, scope=scope)
@@ -74,10 +76,10 @@ class Gdoc():
             with self._zipfile.open('export.txt') as datafile:
                 self._data = json.loads(datafile.read())
                 
-            for d in self.data:
-                found = list(filter(lambda x: re.match(f'[A-Z]+({d["odsNo"]}.pdf)', x), self.zipfile.namelist()))
+            for d in self._data:
+                found = list(filter(lambda x: re.match(f'[A-Z]+({d["jobId"]}.pdf)', x), self.zipfile.namelist()))
             
-                if len(found) == 0:
+                if self.parameters['DownloadFiles'] == 'Y' and len(found) == 0:
                     print(json.dumps({'warning': f'File for {d["symbol1"]} not found in feed'}))
         else:
             raise Exception('API error:\n' + response.text)
@@ -88,8 +90,9 @@ class Gdoc():
             match = re.match(r'[A-Z]+(\d+)\.pdf$', name)
 
             if match:
+                # This changed to jobId in gDoc 2
                 ods_num = int(match.group(1))
-                file_data = next(filter(lambda x: x['odsNo'] == ods_num, self.data), None)
+                file_data = next(filter(lambda x: x['jobId'] == str(ods_num), self.data), None)
                 
                 if file_data is None:
                     print(json.dumps({'warning': f'Data for "{name}" not found in zip file', 'data': file_data}))

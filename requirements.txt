@@ -1,4 +1,4 @@
 boto3
-cryptography==2.9.2
+cryptography
 git+https://github.com/dag-hammarskjold-library/dlx
 requests_oauthlib
