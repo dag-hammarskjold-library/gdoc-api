@@ -76,7 +76,7 @@ class Gdoc():
             with self._zipfile.open('export.txt') as datafile:
                 self._data = json.loads(datafile.read())
                 
-            for d in self.data:
+            for d in self._data:
                 found = list(filter(lambda x: re.match(f'[A-Z]+({d["jobId"]}.pdf)', x), self.zipfile.namelist()))
             
                 if self.parameters['DownloadFiles'] == 'Y' and len(found) == 0:
