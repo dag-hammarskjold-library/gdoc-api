@@ -18,8 +18,7 @@ class Gdoc():
             'dateTo': '',
             'dutyStation': '',
             'DownloadFiles': '',
-            'symbol': '',
-            'Odsstatus': 'N'
+            'symbol': ''
         }
         self._data = {}
         self._zipfile = None # ZipFile https://docs.python.org/3/library/zipfile.html#zipfile-objects
