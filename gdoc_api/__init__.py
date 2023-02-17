@@ -76,30 +76,28 @@ class Gdoc():
                 self._data = json.loads(datafile.read())
                 
             for d in self._data:
-                found = list(filter(lambda x: re.match(f'[A-Z]+({d["jobId"]}.pdf)', x), self.zipfile.namelist()))
+                # files are named by JobId
+                found = list(filter(lambda x: re.match(f'.*?{d["jobId"]}\.pdf', x), self.zipfile.namelist()))
             
-                if self.parameters['DownloadFiles'] == 'Y' and len(found) == 0:
-                    print(json.dumps({'warning': f'File for {d["symbol1"]} not found in feed'}))
+                if len(found) == 0 and self.parameters['DownloadFiles'] == 'Y':
+                    print(json.dumps({'warning': f'File for {d["symbol1"]} not found in zip file'}))
         else:
             raise Exception('API error:\n' + response.text)
             
             
     def iter_files(self, callback):
         for name in self.zipfile.namelist():
-            match = re.match(r'[A-Z]+(\d+)\.pdf$', name)
+            match = re.match(r'.*?(\d+)\.pdf$', name)
 
             if match:
-                # This changed to jobId in gDoc 2
-                ods_num = int(match.group(1))
-                file_data = next(filter(lambda x: x['jobId'] == str(ods_num), self.data), None)
+                # filename changed to jobId in gDoc 2
+                job_id = int(match.group(1))
+                file_data = next(filter(lambda x: x['jobId'] == str(job_id), self.data), None)
                 
                 if file_data is None:
-                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file', 'data': file_data}))
-                    
-                yield callback(self.zipfile.open(name), file_data)
-            elif name[-4:] == '.pdf':
-                print(json.dumps({'warning': f'File "{name}" not found in zip file', 'data': file_data}))
-                
-                
+                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))
+                else:    
+                    yield callback(self.zipfile.open(name), file_data)
+
 class Schema():
     pass
