@@ -28,7 +28,8 @@ def get_args():
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
         
     )
-    c.add_argument('--dlx_connect', default=param('connect-string'))
+    c.add_argument('--dlx_connect', default=param('prodISSU-admin-connect-string'))
+    c.add_argument('--dlx_db', default='undlFiles')
     c.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
     c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
     c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
@@ -62,7 +63,7 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
     
-    DLX.connect(args.dlx_connect)    
+    DLX.connect(args.dlx_connect, database=args.dlx_db)    
     S3.connect(bucket=args.s3_bucket) # this may change
     
     g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
