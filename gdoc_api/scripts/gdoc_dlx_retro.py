@@ -17,7 +17,7 @@ from gdoc_api.scripts import gdoc_dlx
 
 def run():
     ssm = boto3.client('ssm')
-    DB.connect(ssm.get_parameter(Name='connect-string')['Parameter']['Value'])
+    DB.connect(ssm.get_parameter(Name='prodISSU-admin-connect-string')['Parameter']['Value'])
     col = DB.handle['gdoc_dlx_retro']
     last_record = col.find_one({}, sort=[('issue_date', DESCENDING)])
         

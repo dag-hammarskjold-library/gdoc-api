@@ -28,7 +28,7 @@ def get_args():
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
         
     )
-    c.add_argument('--dlx_connect', default=param('connect-string'))
+    c.add_argument('--dlx_connect', default=param('prodISSU-admin-connect-string'))
     c.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
     c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
     c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
