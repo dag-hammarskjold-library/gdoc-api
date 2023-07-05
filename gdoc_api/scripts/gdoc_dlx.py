@@ -16,8 +16,7 @@ def get_args():
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
-    nr.add_argument('--database', default='undlFiles', help='The database to connect to, if the name can\'t be parsed from the connection string')
-    
+
     # get from AWS if not provided
     ssm = boto3.client('ssm')
     
@@ -29,7 +28,8 @@ def get_args():
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
         
     )
-    c.add_argument('--dlx_connect', default=param('prodISSU-admin-connect-string'))
+    c.add_argument('--connection_string', default=param('prodISSU-admin-connect-string'))
+    c.add_argument('--database', default=param('prodISSU-admin-database-name'))
     c.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
     c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
     c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
@@ -63,7 +63,7 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
     
-    DLX.connect(args.dlx_connect, database=args.database)    
+    DLX.connect(args.connection_string, database=args.database)    
     S3.connect(bucket=args.s3_bucket) # this may change
     
     g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
