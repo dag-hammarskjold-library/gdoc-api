@@ -74,11 +74,11 @@ class Gdoc():
         
             with self._zipfile.open('export.txt') as datafile:
                 self._data = json.loads(datafile.read())
-                
+
             for d in self._data:
-                # files are named by JobId
-                found = list(filter(lambda x: re.match(f'.*?{d["jobId"]}\.pdf', x), self.zipfile.namelist()))
-            
+                # files are named by odsNo (formerly jobId)
+                found = list(filter(lambda x: re.match(f'.*?{d["odsNo"]}\.pdf', x), self.zipfile.namelist()))
+
                 if len(found) == 0 and self.parameters['DownloadFiles'] == 'Y':
                     print(json.dumps({'warning': f'File for {d["symbol1"]} not found in zip file'}))
         else:
@@ -90,9 +90,9 @@ class Gdoc():
             match = re.match(r'.*?(\d+)\.pdf$', name)
 
             if match:
-                # filename changed to jobId in gDoc 2
+                # filename changed to odsNo
                 job_id = int(match.group(1))
-                file_data = next(filter(lambda x: x['jobId'] == str(job_id), self.data), None)
+                file_data = next(filter(lambda x: x['odsNo'] == str(job_id), self.data), None)
                 
                 if file_data is None:
                     print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))
