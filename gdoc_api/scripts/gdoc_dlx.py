@@ -16,7 +16,7 @@ def get_args():
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
-    
+
     # get from AWS if not provided
     ssm = boto3.client('ssm')
     
@@ -27,8 +27,8 @@ def get_args():
         title='credentials', 
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
     )
-    c.add_argument('--dlx_connect', default=param('prodISSU-admin-connect-string'))
-    c.add_argument('--dlx_db', default='undlFiles')
+    c.add_argument('--connection_string', default=param('prodISSU-admin-connect-string'))
+    c.add_argument('--database', default=param('prodISSU-admin-database-name'))
     c.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
     c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
     c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
