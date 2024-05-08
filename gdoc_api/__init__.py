@@ -58,6 +58,8 @@ class Gdoc():
         self.parameters[name] = value
 
     def download(self):
+        '''Make the API request using the parameters provided and save the returned ZIP file'''
+
         temp = TemporaryFile('wb+')
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
         headers = {"Authorization": f"Bearer {self.token['access_token']}"} if 'GDOC_API_TESTING' not in os.environ else None
@@ -72,32 +74,47 @@ class Gdoc():
                 
             self._zipfile = ZipFile(temp)
         
+            # all zipfiles have export.txt containing the file metadata
             with self._zipfile.open('export.txt') as datafile:
                 self._data = json.loads(datafile.read())
-                
-            for d in self._data:
-                # files are named by JobId
-                found = list(filter(lambda x: re.match(f'.*?{d["jobId"]}\.pdf', x), self.zipfile.namelist()))
-            
-                if len(found) == 0 and self.parameters['DownloadFiles'] == 'Y':
-                    print(json.dumps({'warning': f'File for {d["symbol1"]} not found in zip file'}))
+
+            # with API DownloadFiles option, the zipfile should also include files named using data from the metadata
+            if self.parameters['DownloadFiles'] == 'Y':
+                # check that the file exists in the zipfile uisng the zipfile manifest
+                for doc in self._data:
+                    found = False
+
+                    # check both jobId and odsNo as the name of the file, as it has varied in the past 
+                    for field in ('jobId', 'odsNo'):
+                        if any(filter(lambda x: re.match(f'.*?{doc[field]}\.pdf', x), self.zipfile.namelist())):
+                            found = True
+
+                    if not found:
+                        print(json.dumps({'warning': f'File for {doc["symbol1"]} not found in zip file'}))
         else:
             raise Exception('API error:\n' + response.text)
-            
-            
+
+        return self
+
     def iter_files(self, callback):
+        '''For each file named in the zipfile manifest, run the provided callback function using the file object 
+        and its and metadata as arguments. This is implemented so that the whole zipfile does not have to be expanded
+        at once.'''
+
         for name in self.zipfile.namelist():
+            # filenames contain a series of digits preceeding the file extension that can be matched to the metadata
             match = re.match(r'.*?(\d+)\.pdf$', name)
 
             if match:
-                # filename changed to jobId in gDoc 2
-                job_id = int(match.group(1))
-                file_data = next(filter(lambda x: x['jobId'] == str(job_id), self.data), None)
-                
-                if file_data is None:
-                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))
-                else:    
+                filename = int(match.group(1))
+
+                # check both jobId and odsNo in the metadata, as the field used has varied in the past
+                if file_data := next(filter(lambda x: x['jobId'] == str(filename), self.data), None):
                     yield callback(self.zipfile.open(name), file_data)
+                elif file_data := next(filter(lambda x: x['odsNo'] == str(filename), self.data), None):
+                    yield callback(self.zipfile.open(name), file_data)
+                else:  
+                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))   
 
 class Schema():
     pass
