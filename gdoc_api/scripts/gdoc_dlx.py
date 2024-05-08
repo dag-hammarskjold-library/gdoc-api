@@ -26,7 +26,6 @@ def get_args():
     c = parser.add_argument_group(
         title='credentials', 
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
-        
     )
     c.add_argument('--connection_string', default=param('prodISSU-admin-connect-string'))
     c.add_argument('--database', default=param('prodISSU-admin-database-name'))
@@ -63,8 +62,8 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
     
-    DLX.connect(args.connection_string, database=args.database)    
-    S3.connect(bucket=args.s3_bucket) # this may change
+    DLX.connect(args.dlx_connect, database=args.dlx_db) 
+    #S3.connect(bucket=args.s3_bucket) # not needed since AWS credentials are already in place
     
     g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
     g.set_param('symbol', args.symbol or '')
@@ -90,7 +89,10 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
         return
       
     def upload(fh, data):
+        # this function is for use as the callback in Gdoc.iter_files
+
         if data['distributionType'] == 'RES':
+            # printing to STDOUT allows caputre in Cloudwatch. Cloudwatch queries can parse JSON strings for searching the logs
             print(json.dumps({'warning': 'Skipping document with distribution type "RES"', 'symbol': data['symbol1']}))
             
             return
@@ -113,7 +115,7 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
         overwrite = True if args.overwrite else False
 
         try:
-            return File.import_from_handle(
+            result = File.import_from_handle(
                 fh,
                 filename=File.encode_fn(list(filter(None, symbols)), lang, 'pdf'),
                 identifiers=identifiers,
@@ -122,21 +124,55 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
                 source='gdoc-dlx-' + args.station,
                 overwrite=overwrite
             )
+
+            # log in DB
+            DLX.handle['gdoc_log'].insert_one(
+                {
+                    'imported': True,
+                    'gdoc_station': args.station,
+                    'gdoc_date': args.date,
+                    'symbols': symbols,
+                    'languages': languages,
+                    'file_id': result
+                }
+            )
+
+            return result
         except FileExistsConflict as e:
-            print(json.dumps({'warning': e.message, 'data': {'symbols': symbols, 'language': languages}}))
+            to_log = {'warning': e.message, 'data': {'symbols': symbols, 'language': languages}}
+            print(json.dumps(to_log))
         except FileExists:
-            print(json.dumps({'info': 'Already in the system', 'data': {'symbols': symbols, 'language': languages}}))
+            to_log = {'info': 'Already in the system', 'data': {'symbols': symbols, 'language': languages}}
+            print(json.dumps(to_log))
         except Exception as e:
-            print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e))), 'data': {'symbols': symbols, 'languages': languages}}))
+            to_log = {'error': '; '.join(re.split('[\r\n]', str(e))), 'data': {'symbols': symbols, 'languages': languages}}
+            print(json.dumps(to_log))
+
+        # log in DB
+        DLX.handle['gdoc_log'].insert_one(
+            {
+                'imported': False,
+                'message': to_log,
+                'gdoc_station': args.station,
+                'gdoc_date': args.date,
+                'symbols': symbols,
+                'languages': languages,
+                'file_id': None
+            }
+        )
     
     i = 0
     
     try:
+        # Gdoc.iter_files() takes a callback function as its only argument
         for result in g.iter_files(upload):
             i += 1
             
             if isinstance(result, File):
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': [x.value for x in result.identifiers], 'languages': result.languages}}))
+
+                # todo: create the bib record if it doesn't already exist
+                
 
     except Exception as e:
         print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))

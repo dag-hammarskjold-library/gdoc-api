@@ -83,8 +83,7 @@ class Gdoc():
                     print(json.dumps({'warning': f'File for {d["symbol1"]} not found in zip file'}))
         else:
             raise Exception('API error:\n' + response.text)
-            
-            
+
     def iter_files(self, callback):
         for name in self.zipfile.namelist():
             match = re.match(r'.*?(\d+)\.pdf$', name)
