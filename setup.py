@@ -20,7 +20,7 @@ setup(
     description = 'Import files from gDoc API into DLX',
     long_description = long_description,
     long_description_content_type = "text/markdown",
-    python_requires = '>=3.5',
+    python_requires = '>=3.8',
     entry_points = {
         'console_scripts': [
             'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:run'
