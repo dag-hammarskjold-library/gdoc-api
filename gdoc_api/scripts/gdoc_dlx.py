@@ -62,8 +62,8 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
     
-    DLX.connect(args.dlx_connect, database=args.dlx_db) 
-    #S3.connect(bucket=args.s3_bucket) # not needed since AWS credentials are already in place
+    DLX.connect(args.connection_string, database=args.database) 
+    S3.connect(bucket=args.s3_bucket) # not needed since AWS credentials are already in place
     
     g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
     g.set_param('symbol', args.symbol or '')
@@ -133,7 +133,7 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
                     'gdoc_date': args.date,
                     'symbols': symbols,
                     'languages': languages,
-                    'file_id': result
+                    'file_id': result.id
                 }
             )
 
