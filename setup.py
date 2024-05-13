@@ -16,7 +16,7 @@ setup(
     license = 'http://www.opensource.org/licenses/bsd-license.php',
     packages = find_packages(exclude=['test']),
     test_suite = 'tests',
-    #install_requires = requirements,
+    install_requires = requirements,
     description = 'Import files from gDoc API into DLX',
     long_description = long_description,
     long_description_content_type = "text/markdown",

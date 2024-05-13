@@ -1,3 +1,5 @@
+# AWS Lambda function that runs gdoc_dlx 
+
 from gdoc_api.scripts import gdoc_dlx
 import sys, datetime
 
