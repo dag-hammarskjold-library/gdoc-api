@@ -1,5 +1,8 @@
 name: Build and push container to ECR and Lambda
-on: [push]
+on:
+    release:
+      types: [ released ]
+  
 jobs:
     deploy:
         name: Build Docker and Deploy Lambda
