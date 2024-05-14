@@ -2,7 +2,7 @@ name: Build and push container to ECR and Lambda
 on: [push]
 jobs:
     deploy:
-        name: Build Docker
+        name: Build Docker and Deploy Lambda
         runs-on: ubuntu-latest
         steps:
         - name: Checkout
@@ -42,3 +42,14 @@ jobs:
             aws lambda update-function-code \
             --function-name gdoc-dlx-lambda \
             --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+        - name: Update EventBridge Rules
+          id: update-rules
+          run: |
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ny-1day
+            --schedule-expression "cron(30 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ny-1day \
+            --targets '[{"Id":1,"Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":1,\"description\":\"All NY documents from yesterday.\"}"}]'
+          
