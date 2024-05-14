@@ -41,6 +41,4 @@ jobs:
           run: |
             aws lambda update-function-code \
             --function-name gdoc-dlx-lambda \
-            --package-type Image \
-            --code ImageURI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-            --role ${{ secrets.EXECUTE_ROLE }}
+            --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
