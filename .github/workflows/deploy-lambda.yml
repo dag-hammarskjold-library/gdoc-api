@@ -47,7 +47,7 @@ jobs:
           id: update-rules
           run: |
             aws events put-rule \
-            --name gdoc-dlx-lambda-ny-1day
+            --name gdoc-dlx-lambda-ny-1day \
             --schedule-expression "cron(30 6 * * ? *)"
             aws events put-targets \
             --rule gdoc-dlx-lambda-ny-1day \
