@@ -1,0 +1,93 @@
+name: Build and push container to ECR and Lambda
+on:
+    release:
+      types: [ released ]
+  
+jobs:
+    deploy:
+        name: Build Docker and Deploy Lambda
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with: 
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
+
+        - name: Login to Amazon ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v2
+
+        - name: Build, tag, and push the image to ECR
+          id: build-image
+          env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+            IMAGE_TAG: latest
+          run: |
+            cd ./gdoc-dlx-lambda
+            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+            echo "Pushing image to ECR..."
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+        - name: Deploy image to Lambda
+          id: deploy-image
+          env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+            IMAGE_TAG: latest
+          run: |
+            aws lambda update-function-code \
+            --function-name gdoc-dlx-lambda \
+            --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+        - name: Update EventBridge Rules
+          id: update-rules
+          run: |
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ny-1day \
+            --schedule-expression "cron(0 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ny-1day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":1,\"description\":\"All NY documents from yesterday.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ge-1day \
+            --schedule-expression "cron(15 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ge-1day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":1,\"description\":\"All GE documents from yesterday.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ny-2day \
+            --schedule-expression "cron(30 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ny-2day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":2,\"description\":\"All NY documents from 2 days ago.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ge-2day \
+            --schedule-expression "cron(45 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ge-2day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":2,\"description\":\"All GE documents from 2 days ago.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ny-3day \
+            --schedule-expression "cron(0 7 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ny-3day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":3,\"description\":\"All NY documents from 3 days ago.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ge-3day \
+            --schedule-expression "cron(15 7 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ge-3day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":3,\"description\":\"All GE documents from 3 days ago.\"}"}]'
+          
