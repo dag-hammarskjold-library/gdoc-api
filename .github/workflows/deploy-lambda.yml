@@ -51,5 +51,5 @@ jobs:
             --schedule-expression "cron(30 6 * * ? *)"
             aws events put-targets \
             --rule gdoc-dlx-lambda-ny-1day \
-            --targets '[{"Id":1,"Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":1,\"description\":\"All NY documents from yesterday.\"}"}]'
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":1,\"description\":\"All NY documents from yesterday.\"}"}]'
           
