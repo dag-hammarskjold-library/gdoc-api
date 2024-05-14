@@ -48,8 +48,43 @@ jobs:
           run: |
             aws events put-rule \
             --name gdoc-dlx-lambda-ny-1day \
-            --schedule-expression "cron(30 6 * * ? *)"
+            --schedule-expression "cron(0 6 * * ? *)"
             aws events put-targets \
             --rule gdoc-dlx-lambda-ny-1day \
             --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":1,\"description\":\"All NY documents from yesterday.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ge-1day \
+            --schedule-expression "cron(15 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ge-1day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":1,\"description\":\"All GE documents from yesterday.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ny-2day \
+            --schedule-expression "cron(30 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ny-2day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":2,\"description\":\"All NY documents from 2 days ago.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ge-2day \
+            --schedule-expression "cron(45 6 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ge-2day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":2,\"description\":\"All GE documents from 2 days ago.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ny-3day \
+            --schedule-expression "cron(0 7 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ny-3day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":3,\"description\":\"All NY documents from 3 days ago.\"}"}]'
+
+            aws events put-rule \
+            --name gdoc-dlx-lambda-ge-3day \
+            --schedule-expression "cron(15 7 * * ? *)"
+            aws events put-targets \
+            --rule gdoc-dlx-lambda-ge-3day \
+            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":3,\"description\":\"All GE documents from 3 days ago.\"}"}]'
           
