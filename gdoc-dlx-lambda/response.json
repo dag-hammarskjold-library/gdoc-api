@@ -1,0 +1,1 @@
+{"errorMessage": "Event parameter \"duty_station\" is required", "errorType": "Exception", "requestId": "38a8bd3a-b799-420f-85c9-568d9e9e9dc4", "stackTrace": ["  File \"/var/task/service.py\", line 11, in handler\n    raise Exception(f'Event parameter \"{param}\" is required')\n"]}
