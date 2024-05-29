@@ -1,6 +1,7 @@
 import sys, re, json, boto3
 from argparse import ArgumentParser
 from dlx import DB as DLX
+from dlx.marc import Bib, Condition
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
@@ -113,9 +114,10 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
         identifiers = [Identifier('symbol', x) for x in filter(None, symbols)]
         languages = [lang]
         overwrite = True if args.overwrite else False
+        import_result = None
 
         try:
-            result = File.import_from_handle(
+            import_result = File.import_from_handle(
                 fh,
                 filename=File.encode_fn(list(filter(None, symbols)), lang, 'pdf'),
                 identifiers=identifiers,
@@ -124,20 +126,6 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
                 source='gdoc-dlx-' + args.station,
                 overwrite=overwrite
             )
-
-            # log in DB
-            DLX.handle['gdoc_log'].insert_one(
-                {
-                    'imported': True,
-                    'gdoc_station': args.station,
-                    'gdoc_date': args.date,
-                    'symbols': symbols,
-                    'languages': languages,
-                    'file_id': result.id
-                }
-            )
-
-            return result
         except FileExistsConflict as e:
             to_log = {'warning': e.message, 'data': {'symbols': symbols, 'language': languages}}
             print(json.dumps(to_log))
@@ -148,18 +136,53 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
             to_log = {'error': '; '.join(re.split('[\r\n]', str(e))), 'data': {'symbols': symbols, 'languages': languages}}
             print(json.dumps(to_log))
 
-        # log in DB
-        DLX.handle['gdoc_log'].insert_one(
-            {
-                'imported': False,
-                'message': to_log,
-                'gdoc_station': args.station,
-                'gdoc_date': args.date,
-                'symbols': symbols,
-                'languages': languages,
-                'file_id': None
-            }
-        )
+        if import_result:
+            print('OK')
+
+            # log in DB
+            DLX.handle['gdoc_log'].insert_one(
+                {
+                    'imported': True,
+                    'gdoc_station': args.station,
+                    'gdoc_date': args.date,
+                    'symbols': symbols,
+                    'languages': languages,
+                    'file_id': import_result.id
+                }
+            )
+
+            if lang == 'EN':
+                # create bib record if none exists for this symbol
+                if bib := Bib.from_query(Condition('191', {'a': {'$in': symbols}})):
+                    print('Bib record for {symbols} already exists')
+                else:    
+                    new_bib = Bib()
+
+                    for symbol in symbols:
+                        new_bib.set('191', 'a', symbol, address='+')
+
+                    new_bib.set('245', 'a', 'Work in progress')
+
+                    if title := data.get('title'):
+                        new_bib.set('246', 'a', title)
+
+                    new_bib.commit(user='gDoc import')
+                    print(f'created new bib {new_bib.id}')
+
+            return import_result
+        else:
+            # log in DB
+            DLX.handle['gdoc_log'].insert_one(
+                {
+                    'imported': False,
+                    'message': to_log,
+                    'gdoc_station': args.station,
+                    'gdoc_date': args.date,
+                    'symbols': symbols,
+                    'languages': languages,
+                    'file_id': None
+                }
+            )
     
     i = 0
     
@@ -169,10 +192,8 @@ def run(*, station=None, date=None, symbol=None, language=None, overwrite=None, 
             i += 1
             
             if isinstance(result, File):
-                print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': [x.value for x in result.identifiers], 'languages': result.languages}}))
-
-                # todo: create the bib record if it doesn't already exist
-                
+                symbols = [x.value for x in result.identifiers]
+                print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': symbols, 'languages': result.languages}}))
 
     except Exception as e:
         print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
