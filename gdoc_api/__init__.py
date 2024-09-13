@@ -64,6 +64,7 @@ class Gdoc():
 
         temp = TemporaryFile('wb+')
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
+        # And there are some additional HTTP headers
         headers = {
             "Authorization": f"Bearer {self.token['access_token']}",
             "Content-Type": "application/x-www-form-urlencoded",
