@@ -6,12 +6,12 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 
-#API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
-API_URL = 'http://conferences.unite.un.org/gdoc-data/api/odsdata/getodsdocuments'
+# This is the UAT URL for the API, we can test against it.
+API_URL = 'https://dgacm-uat-eus2-api.azure-api.net/dgacm/api/v1/odsdata/GetODSDocuments'
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
-    def __init__(self, *, username, password):
+    def __init__(self, *, username, password, subscription_key):
         self.base = API_URL
         self.parameters = {
             'dateFrom': '',
@@ -25,16 +25,18 @@ class Gdoc():
         
         # authenticate
         if 'GDOC_API_TESTING' not in os.environ:
-            scope = ["gDoc2DataAPIAccess", "gDocFilesAPIAccess"]
+            # The scope changed
+            scope = ["api://gdoc-data-uat/.default"]
             auth = HTTPBasicAuth(username, password)
             client = BackendApplicationClient(client_id=password)
             oauth = OAuth2Session(client=client, scope=scope)
         
             self.token = oauth.fetch_token(
-                token_url='https://conferences.unite.un.org/ucid4/connect/token', 
+                token_url='https://login.microsoftonline.com/10976151-7acc-47b3-a050-e1d9f938b086/oauth2/v2.0/token', 
                 auth=auth, 
                 scope=scope
             )
+            self.subscription_key = subscription_key
         
     @property
     def data(self):
@@ -62,7 +64,11 @@ class Gdoc():
 
         temp = TemporaryFile('wb+')
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
-        headers = {"Authorization": f"Bearer {self.token['access_token']}"} if 'GDOC_API_TESTING' not in os.environ else None
+        headers = {
+            "Authorization": f"Bearer {self.token['access_token']}",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Ocp-Apim-Subscription-Key": self.subscription_key
+        } if 'GDOC_API_TESTING' not in os.environ else None
         print(json.dumps({'info': f'Getting {url}'}))
         response = requests.get(url, stream=True, headers=headers)
         
