@@ -6,13 +6,17 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 
-#API_URL = 'https://gdoc.un.org/api/ods/getdocuments' # set here so it can be changed for testing
-API_URL = 'http://conferences.unite.un.org/gdoc-data/api/odsdata/getodsdocuments'
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
 class Gdoc():
-    def __init__(self, *, username, password):
-        self.base = API_URL
+    def __init__(self, *, client_id, client_secret, token_url,
+        api_url, ocp_apim_subscription_key, scope):
+
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.token_url = token_url
+        self.api_url = api_url
+        self.ocp_apim_subscription_key = ocp_apim_subscription_key
+        self.scope = scope
         self.parameters = {
             'dateFrom': '',
             'dateTo': '',
@@ -26,14 +30,14 @@ class Gdoc():
         # authenticate
         if 'GDOC_API_TESTING' not in os.environ:
             scope = ["gDoc2DataAPIAccess", "gDocFilesAPIAccess"]
-            auth = HTTPBasicAuth(username, password)
-            client = BackendApplicationClient(client_id=password)
-            oauth = OAuth2Session(client=client, scope=scope)
+            auth = HTTPBasicAuth(self.client_id, self.client_secret)
+            client = BackendApplicationClient(client_id=self.client_secret) 
+            oauth = OAuth2Session(client=client, scope=self.scope)
         
             self.token = oauth.fetch_token(
-                token_url='https://conferences.unite.un.org/ucid4/connect/token', 
+                token_url=self.token_url, 
                 auth=auth, 
-                scope=scope
+                scope=self.scope
             )
         
     @property
@@ -61,8 +65,14 @@ class Gdoc():
         '''Make the API request using the parameters provided and save the returned ZIP file'''
 
         temp = TemporaryFile('wb+')
-        url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
-        headers = {"Authorization": f"Bearer {self.token['access_token']}"} if 'GDOC_API_TESTING' not in os.environ else None
+        url = self.api_url + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
+        
+        headers = {
+            "Authorization": f"Bearer {self.token['access_token']}",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Ocp-Apim-Subscription-Key": self.ocp_apim_subscription_key
+        } if 'GDOC_API_TESTING' not in os.environ else None
+
         print(json.dumps({'info': f'Getting {url}'}))
         response = requests.get(url, stream=True, headers=headers)
         
