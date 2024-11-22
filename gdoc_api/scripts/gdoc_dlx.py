@@ -16,7 +16,8 @@ def get_args():
     nr.add_argument('--symbol', help='get only the files for the specified symbol')
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
-    nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
+    nr.add_argument('--recursive', action='store_true', help='download the files one symbol at a time')
+    nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
 
     # get from AWS if not provided
     ssm = boto3.client('ssm')
@@ -79,6 +80,9 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
     g.set_param('dutyStation', args.station or '')
 
     if args.recursive:
+        if args.data_only:
+            raise Exception('--data_only not compatible with --recursive')
+        
         # call the run function for each indvidual symbol
         seen = {}
         
@@ -101,6 +105,10 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
             seen[symbol] = True;
         
         return
+    elif args.data_only:
+        g.set_param('DownloadFiles', 'N')
+        print(json.dumps(g.data))
+        exit()
     else:
         g.set_param('DownloadFiles', 'Y')
       
