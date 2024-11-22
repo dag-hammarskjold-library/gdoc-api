@@ -83,9 +83,7 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
         
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
-    
-    print(args)
-    
+
     DLX.connect(args.connection_string, database=args.database) 
     S3.connect(bucket=args.s3_bucket) # not needed since AWS credentials are already in place
     
