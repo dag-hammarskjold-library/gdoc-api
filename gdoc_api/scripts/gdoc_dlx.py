@@ -199,7 +199,10 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': symbols, 'languages': result.languages}}))
             
                 # create bib record if none exists for this symbol
-                if bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
+
+                if result.languages[0].lower() != 'en':
+                    pass
+                elif bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
                     print('Bib record for {symbols} already exists')
                 else:    
                     new_bib = Bib()
