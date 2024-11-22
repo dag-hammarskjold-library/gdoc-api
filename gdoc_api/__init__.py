@@ -1,4 +1,5 @@
 import os, requests, urllib, json, re
+from typing import Callable, Iterator
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
 from zipfile import ZipFile
@@ -11,7 +12,7 @@ API_URL = 'http://conferences.unite.un.org/gdoc-data/api/odsdata/getodsdocuments
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
 class Gdoc():
-    def __init__(self, *, username, password):
+    def __init__(self, *, username: str, password: str):
         self.base = API_URL
         self.parameters = {
             'dateFrom': '',
@@ -37,7 +38,7 @@ class Gdoc():
             )
         
     @property
-    def data(self):
+    def data(self) -> dict:
         if self._data:
             return self._data
 
@@ -46,7 +47,7 @@ class Gdoc():
         return self._data
     
     @property
-    def zipfile(self):
+    def zipfile(self) -> ZipFile:
         if self._zipfile:
             return self._zipfile
         
@@ -54,7 +55,9 @@ class Gdoc():
         
         return self._zipfile
         
-    def set_param(self, name, value):
+    def set_param(self, name: str, value: str) -> None:
+        """Sets a single param to be used in the gDoc API call"""
+
         self.parameters[name] = value
 
     def download(self):
@@ -96,7 +99,7 @@ class Gdoc():
 
         return self
 
-    def iter_files(self, callback):
+    def iter_files(self, callback: Callable) -> Iterator:
         '''For each file named in the zipfile manifest, run the provided callback function using the file object 
         and its and metadata as arguments. This is implemented so that the whole zipfile does not have to be expanded
         at once.'''
