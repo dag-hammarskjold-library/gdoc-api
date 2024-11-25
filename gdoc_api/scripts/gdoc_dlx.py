@@ -9,7 +9,7 @@ def get_args():
     parser = ArgumentParser(prog='gdoc-dlx')
     
     r = parser.add_argument_group('required')
-    r.add_argument('--station', required=True, choices=['NY', 'GE', 'Vienna', 'Beirut', 'Bangkok'])
+    r.add_argument('--station', required=True, choices=['NY', 'GE', 'Vienna', 'Beirut', 'Bangkok', 'Nairobi'])
     r.add_argument('--date', required=True, help='YYYY-MM-DD')
 
     nr = parser.add_argument_group('not required')
@@ -22,7 +22,7 @@ def get_args():
     ssm = boto3.client('ssm')
     # Can be "qa" or "prod"
     env = os.getenv("GDOC_ENV", "qa")
-    print("Connecting to",env)
+    print("Connecting to GDOC:",env)
     
     def param(name):
         return ssm.get_parameter(Name=name)['Parameter']['Value']
