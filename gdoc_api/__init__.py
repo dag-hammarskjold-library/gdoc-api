@@ -1,5 +1,5 @@
-import os, requests, urllib, json, re
-from typing import Callable, Iterator
+import os, requests, urllib, json, re, shutil
+from typing import Optional, Self, Callable, Iterator
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
 from zipfile import ZipFile
@@ -48,6 +48,8 @@ class Gdoc():
     
     @property
     def zipfile(self) -> ZipFile:
+        """Returns an in-memory ZipFile object containing the API request payload"""
+
         if self._zipfile:
             return self._zipfile
         
@@ -60,10 +62,15 @@ class Gdoc():
 
         self.parameters[name] = value
 
-    def download(self):
-        '''Make the API request using the parameters provided and save the returned ZIP file'''
+    def download(self, save_as: os.PathLike = None) -> Self:
+        """Make the API request using the parameters provided and save the
+        returned Zip file. The Zip file is stored in memory. If `save_as` is 
+        provided, the Zip file is also saved to that localtion on the local disk.
+        """
 
         temp = TemporaryFile('wb+')
+        self.tempfile = temp
+        
         url = self.base + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
         headers = {"Authorization": f"Bearer {self.token['access_token']}"} if 'GDOC_API_TESTING' not in os.environ else None
         print(json.dumps({'info': f'Getting {url}'}))
@@ -76,6 +83,12 @@ class Gdoc():
                 temp.write(chunk)
                 
             self._zipfile = ZipFile(temp)
+
+            if save_as:
+                temp.seek(0)
+                new_file = open(save_as, 'wb')
+                shutil.copyfileobj(temp, new_file)
+                new_file.close()
         
             # all zipfiles have export.txt containing the file metadata
             with self._zipfile.open('export.txt') as datafile:

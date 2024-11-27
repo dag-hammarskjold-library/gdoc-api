@@ -6,7 +6,6 @@ from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
 def get_args(**kwargs):
-    print('hi')
     parser = ArgumentParser(prog='gdoc-dlx')
     
     r = parser.add_argument_group('required')
@@ -18,6 +17,7 @@ def get_args(**kwargs):
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
+    nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
 
     # get from AWS if not provided
     ssm = boto3.client('ssm')
@@ -40,12 +40,12 @@ def get_args(**kwargs):
 
     return parser.parse_args()
 
-def process_kwargs(kwargs):
+def process_kwargs(**kwargs):
     """If being imported as a function, process kwargs into command line args 
     so they can be parsed by argparse"""
 
     sys.argv = [sys.argv[0]]
-    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket')
+    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'save_as')
 
     for param in ('station', 'date'):
         if param not in params:
