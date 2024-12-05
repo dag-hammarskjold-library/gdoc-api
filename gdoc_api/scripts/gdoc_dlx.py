@@ -1,5 +1,6 @@
 import sys, re, json, boto3, os
 from argparse import ArgumentParser
+from datetime import datetime, timezone
 from dlx import DB as DLX
 from dlx.marc import Bib, Query, Condition, Or
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
@@ -192,7 +193,8 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                     'gdoc_date': args.date,
                     'symbols': symbols,
                     'languages': languages,
-                    'file_id': import_result.id
+                    'file_id': import_result.id,
+                    'time': datetime.now(timezone.utc)
                 }
             )
 
@@ -207,7 +209,8 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                     'gdoc_date': args.date,
                     'symbols': symbols,
                     'languages': languages,
-                    'file_id': None
+                    'file_id': None,
+                    'time': datetime.now(timezone.utc)
                 }
             )
     
