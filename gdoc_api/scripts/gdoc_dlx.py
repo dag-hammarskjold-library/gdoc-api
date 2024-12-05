@@ -55,7 +55,7 @@ def get_args(**kwargs):
     # so they can be parsed by argparse
     if kwargs:
         sys.argv = [sys.argv[0]]
-        params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'data_only', 'create_bibs')
+        params = ('station', 'date', 'symbol', 'language', 'overwrite', 'recursive', 'connection_string', 'database', 's3_bucket', 'data_only', 'create_bibs')
 
         for param in ('station', 'date'):
             if param not in params:
