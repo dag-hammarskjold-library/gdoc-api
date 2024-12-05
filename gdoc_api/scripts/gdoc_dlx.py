@@ -1,4 +1,4 @@
-import sys, re, json, boto3
+import sys, re, json, boto3, os
 from argparse import ArgumentParser
 from dlx import DB as DLX
 from dlx.marc import Bib, Query, Condition, Or
@@ -9,7 +9,7 @@ def get_args(**kwargs):
     parser = ArgumentParser(prog='gdoc-dlx')
     
     r = parser.add_argument_group('required')
-    r.add_argument('--station', required=True, choices=['NY', 'GE'])
+    r.add_argument('--station', required=True, choices=['NY', 'GE', 'Vienna', 'Beirut', 'Bangkok', 'Nairobi'])
     r.add_argument('--date', required=True, help='YYYY-MM-DD')
 
     nr = parser.add_argument_group('not required')
@@ -18,9 +18,13 @@ def get_args(**kwargs):
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
     nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
+    nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
 
     # get from AWS if not provided
     ssm = boto3.client('ssm')
+    # Can be "qa" or "prod"
+    env = os.getenv("GDOC_ENV", "qa")
+    print("Connecting to GDOC:",env)
     
     def param(name):
         return ssm.get_parameter(Name=name)['Parameter']['Value']
@@ -29,11 +33,23 @@ def get_args(**kwargs):
         title='credentials', 
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
     )
-    c.add_argument('--connection_string', default=param('prodISSU-admin-connect-string'))
-    c.add_argument('--database', default=param('prodISSU-admin-database-name'))
-    c.add_argument('--s3_bucket', default=param('dlx-s3-bucket'))
-    c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-api-secrets'))['username'])
-    c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-api-secrets'))['password'])
+
+    connect_string_param = json.loads(param(f'gdoc-{env}-api-secrets'))['connect_string_param']
+
+    c.add_argument('--connection_string', default=param(connect_string_param))
+    c.add_argument('--database', default=json.loads(param(f'gdoc-{env}-api-secrets'))['database_name'])
+    c.add_argument('--s3_bucket', default=json.loads(param(f'gdoc-{env}-api-secrets'))['bucket'])
+    c.add_argument('--gdoc_token_url', default=json.loads(param(f'gdoc-{env}-api-secrets'))['token_url'])
+    c.add_argument('--gdoc_api_url', default=json.loads(param(f'gdoc-{env}-api-secrets'))['api_url'])
+    c.add_argument('--gdoc_ocp_apim_subscription_key', default=json.loads(param(f'gdoc-{env}-api-secrets'))['ocp_apim_subscription_key'])
+    c.add_argument('--gdoc_client_id', default=json.loads(param(f'gdoc-{env}-api-secrets'))['client_id'])
+    c.add_argument('--gdoc_client_secret', default=json.loads(param(f'gdoc-{env}-api-secrets'))['client_secret'])
+    c.add_argument('--gdoc_scope', default=json.loads(param(f'gdoc-{env}-api-secrets'))['scope'])
+
+    # Deprecated, replaced by client ID and secret
+    #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
+    #c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-{env}-api-secrets'))['password'])
+    
 
     if kwargs:
         process_kwargs(**kwargs)
@@ -45,7 +61,7 @@ def process_kwargs(**kwargs):
     so they can be parsed by argparse"""
 
     sys.argv = [sys.argv[0]]
-    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'save_as')
+    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
 
     for param in ('station', 'date'):
         if param not in params:
@@ -55,7 +71,7 @@ def process_kwargs(**kwargs):
         if param not in params:
             raise Exception(f'Invalid argument: "{param}"')
 
-        if param in ('overwrite', 'recursive'):
+        if param in ('overwrite', 'recursive', 'data_only'):
             # boolean args
             if arg == True:
                 sys.argv.append(f'--{param}')
@@ -75,17 +91,27 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
         
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
-    
+
     DLX.connect(args.connection_string, database=args.database) 
     S3.connect(bucket=args.s3_bucket) # not needed since AWS credentials are already in place
     
-    g = Gdoc(username=args.gdoc_api_username, password=args.gdoc_api_password)
+    g = Gdoc(
+        client_id=args.gdoc_client_id, 
+        client_secret=args.gdoc_client_secret,
+        token_url=args.gdoc_token_url,
+        api_url=args.gdoc_api_url,
+        ocp_apim_subscription_key=args.gdoc_ocp_apim_subscription_key,
+        scope=args.gdoc_scope
+    )
     g.set_param('symbol', args.symbol or '')
     g.set_param('dateFrom', args.date or '')
     g.set_param('dateTo', args.date or '')
     g.set_param('dutyStation', args.station or '')
 
     if args.recursive:
+        if args.data_only:
+            raise Exception('--data_only not compatible with --recursive')
+        
         # call the run function for each indvidual symbol
         seen = {}
         
@@ -108,6 +134,10 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
             seen[symbol] = True;
         
         return
+    elif args.data_only:
+        g.set_param('DownloadFiles', 'N')
+        print(json.dumps(g.data))
+        exit()
     else:
         g.set_param('DownloadFiles', 'Y')
       
@@ -206,7 +236,10 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': symbols, 'languages': result.languages}}))
             
                 # create bib record if none exists for this symbol
-                if bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
+
+                if result.languages[0].lower() != 'en':
+                    pass
+                elif bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
                     print('Bib record for {symbols} already exists')
                 else:    
                     new_bib = Bib()
