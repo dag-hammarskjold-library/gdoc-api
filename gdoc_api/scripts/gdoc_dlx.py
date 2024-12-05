@@ -5,7 +5,7 @@ from dlx.marc import Bib, Query, Condition, Or
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
-def get_args():
+def get_args(**kwargs):
     parser = ArgumentParser(prog='gdoc-dlx')
     
     r = parser.add_argument_group('required')
@@ -18,6 +18,7 @@ def get_args():
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     nr.add_argument('--recursive', action='store_true', help='download the files one symbol at a time')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
+    nr.add_argument('--create_bibs', action='store_true', help='Create bib record for symbol if it doesn\'t exist')
 
     # get from AWS if not provided
     ssm = boto3.client('ssm')
@@ -48,19 +49,12 @@ def get_args():
     # Deprecated, replaced by client ID and secret
     #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
     #c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-{env}-api-secrets'))['password'])
-    
 
-    return parser.parse_args()
-
-def set_log():
-    pass
-    
-###
-
-def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None):
+    # If running as a function, convert the function args to command line args
+    # so they can be parsed by argparse
     if kwargs:
         sys.argv = [sys.argv[0]]
-        params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket')
+        params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'data_only', 'create_bibs')
 
         for param in ('station', 'date'):
             if param not in params:
@@ -70,14 +64,22 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
             if param not in params:
                 raise Exception(f'Invalid argument: "{param}"')
 
-            if param in ('overwrite', 'recursive'):
+            if param in ('overwrite', 'recursive', 'data_only', 'create_bibs'):
                 # boolean args
                 if arg == True:
                     sys.argv.append(f'--{param}')
             else:
                 sys.argv.append(f'--{param}={arg}')
-   
-    args = get_args()
+
+    return parser.parse_args()
+
+def set_log():
+    pass
+    
+###
+
+def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None, create_bibs=None):
+    args = get_args(**kwargs)
     
     if not args.date and not args.symbol:
         raise Exception('--symbol or --date required')
@@ -228,13 +230,12 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                 symbols = [x.value for x in result.identifiers]
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': symbols, 'languages': result.languages}}))
             
-                # create bib record if none exists for this symbol
-
-                if result.languages[0].lower() != 'en':
+                # create bib record if option enabled
+                if args.create_bibs is None or result.languages[0].lower() != 'en':
                     pass
                 elif bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
                     print('Bib record for {symbols} already exists')
-                else:    
+                else:
                     new_bib = Bib()
 
                     for symbol in symbols:
@@ -250,7 +251,6 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
 
                     new_bib.commit(user='gDoc import')
                     print(json.dumps({'info': 'Created new bib', 'data': {'record_id': new_bib.id}}))
-
     except Exception as e:
         print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
         
