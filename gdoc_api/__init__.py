@@ -1,4 +1,5 @@
-import os, requests, urllib, json, re
+import os, requests, urllib, json, re, shutil
+from typing import Optional, Self, Callable, Iterator
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
 from zipfile import ZipFile
@@ -41,7 +42,7 @@ class Gdoc():
             )
         
     @property
-    def data(self):
+    def data(self) -> dict:
         if self._data:
             return self._data
 
@@ -50,7 +51,9 @@ class Gdoc():
         return self._data
     
     @property
-    def zipfile(self):
+    def zipfile(self) -> ZipFile:
+        """Returns an in-memory ZipFile object containing the API request payload"""
+
         if self._zipfile:
             return self._zipfile
         
@@ -58,13 +61,19 @@ class Gdoc():
         
         return self._zipfile
         
-    def set_param(self, name, value):
+    def set_param(self, name: str, value: str) -> None:
+        """Sets a single param to be used in the gDoc API call"""
+
         self.parameters[name] = value
 
-    def download(self):
-        '''Make the API request using the parameters provided and save the returned ZIP file'''
+    def download(self, save_as: os.PathLike = None) -> Self:
+        """Make the API request using the parameters provided and save the
+        returned Zip file. The Zip file is stored in memory. If `save_as` is 
+        provided, the Zip file is also saved to that localtion on the local disk.
+        """
 
         temp = TemporaryFile('wb+')
+        self.tempfile = temp
         url = self.api_url + '?' + '&'.join(map(lambda x: '{}={}'.format(x[0], x[1]), self.parameters.items()))
         
         headers = {
@@ -72,6 +81,7 @@ class Gdoc():
             "Content-Type": "application/x-www-form-urlencoded",
             "Ocp-Apim-Subscription-Key": self.ocp_apim_subscription_key
         } if 'GDOC_API_TESTING' not in os.environ else None
+
 
         print(json.dumps({'info': f'Getting {url}'}))
         response = requests.get(url, stream=True, headers=headers)
@@ -83,6 +93,12 @@ class Gdoc():
                 temp.write(chunk)
                 
             self._zipfile = ZipFile(temp)
+
+            if save_as:
+                temp.seek(0)
+                new_file = open(save_as, 'wb')
+                shutil.copyfileobj(temp, new_file)
+                new_file.close()
         
             # all zipfiles have export.txt containing the file metadata
             with self._zipfile.open('export.txt') as datafile:
@@ -106,7 +122,7 @@ class Gdoc():
 
         return self
 
-    def iter_files(self, callback):
+    def iter_files(self, callback: Callable) -> Iterator:
         '''For each file named in the zipfile manifest, run the provided callback function using the file object 
         and its and metadata as arguments. This is implemented so that the whole zipfile does not have to be expanded
         at once.'''

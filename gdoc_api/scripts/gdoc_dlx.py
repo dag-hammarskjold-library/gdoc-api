@@ -5,7 +5,7 @@ from dlx.marc import Bib, Query, Condition, Or
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
 from gdoc_api import Gdoc
 
-def get_args():
+def get_args(**kwargs):
     parser = ArgumentParser(prog='gdoc-dlx')
     
     r = parser.add_argument_group('required')
@@ -16,7 +16,8 @@ def get_args():
     nr.add_argument('--symbol', help='get only the files for the specified symbol')
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
-    nr.add_argument('--recursive', action='store_true', help='download the files one symbol at a time')
+    nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
+    nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
 
     # get from AWS if not provided
@@ -50,7 +51,32 @@ def get_args():
     #c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-{env}-api-secrets'))['password'])
     
 
+    if kwargs:
+        process_kwargs(**kwargs)
+
     return parser.parse_args()
+
+def process_kwargs(**kwargs):
+    """If being imported as a function, process kwargs into command line args 
+    so they can be parsed by argparse"""
+
+    sys.argv = [sys.argv[0]]
+    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
+
+    for param in ('station', 'date'):
+        if param not in params:
+            raise Exception(f'Required param {param}')
+
+    for param, arg in kwargs.items():
+        if param not in params:
+            raise Exception(f'Invalid argument: "{param}"')
+
+        if param in ('overwrite', 'recursive', 'data_only'):
+            # boolean args
+            if arg == True:
+                sys.argv.append(f'--{param}')
+        else:
+            sys.argv.append(f'--{param}={arg}')
 
 def set_log():
     pass
@@ -58,26 +84,7 @@ def set_log():
 ###
 
 def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None):
-    if kwargs:
-        sys.argv = [sys.argv[0]]
-        params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket')
-
-        for param in ('station', 'date'):
-            if param not in params:
-                raise Exception(f'Required param {param}')
-
-        for param, arg in kwargs.items():
-            if param not in params:
-                raise Exception(f'Invalid argument: "{param}"')
-
-            if param in ('overwrite', 'recursive'):
-                # boolean args
-                if arg == True:
-                    sys.argv.append(f'--{param}')
-            else:
-                sys.argv.append(f'--{param}={arg}')
-   
-    args = get_args()
+    args = get_args(**kwargs)
     
     if not args.date and not args.symbol:
         raise Exception('--symbol or --date required')
