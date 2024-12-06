@@ -81,7 +81,7 @@ def set_log():
 
 def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None, create_bibs=None):
     args = get_args(**kwargs)
-    
+
     if not args.date and not args.symbol:
         raise Exception('--symbol or --date required')
         
@@ -234,7 +234,7 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': symbols, 'languages': result.languages}}))
             
                 # create bib record if option enabled
-                if args.create_bibs is None or result.languages[0].lower() != 'en':
+                if not args.create_bibs or result.languages[0].lower() != 'en':
                     pass
                 elif bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
                     print('Bib record for {symbols} already exists')
