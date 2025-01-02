@@ -1,5 +1,6 @@
 import sys, re, json, boto3, os
 from argparse import ArgumentParser
+from datetime import datetime, timezone
 from dlx import DB as DLX
 from dlx.marc import Bib, Query, Condition, Or
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
@@ -19,6 +20,7 @@ def get_args(**kwargs):
     nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
     nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
+    nr.add_argument('--create_bibs', action='store_true', help='Create bib record for symbol if it doesn\'t exist')
 
     # get from AWS if not provided
     ssm = boto3.client('ssm')
@@ -49,7 +51,6 @@ def get_args(**kwargs):
     # Deprecated, replaced by client ID and secret
     #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
     #c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-{env}-api-secrets'))['password'])
-    
 
     if kwargs:
         process_kwargs(**kwargs)
@@ -83,9 +84,9 @@ def set_log():
     
 ###
 
-def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None):
+def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None, create_bibs=None):
     args = get_args(**kwargs)
-    
+
     if not args.date and not args.symbol:
         raise Exception('--symbol or --date required')
         
@@ -197,7 +198,8 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                     'gdoc_date': args.date,
                     'symbols': symbols,
                     'languages': languages,
-                    'file_id': import_result.id
+                    'file_id': import_result.id,
+                    'time': datetime.now(timezone.utc)
                 }
             )
 
@@ -212,7 +214,8 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                     'gdoc_date': args.date,
                     'symbols': symbols,
                     'languages': languages,
-                    'file_id': None
+                    'file_id': None,
+                    'time': datetime.now(timezone.utc)
                 }
             )
     
@@ -235,13 +238,12 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
                 symbols = [x.value for x in result.identifiers]
                 print(json.dumps({'info': 'OK', 'data': {'checksum': result.id, 'symbols': symbols, 'languages': result.languages}}))
             
-                # create bib record if none exists for this symbol
-
-                if result.languages[0].lower() != 'en':
+                # create bib record if option enabled
+                if not args.create_bibs or result.languages[0].lower() != 'en':
                     pass
                 elif bib := Bib.from_query(Query(Or(Condition('191', {'a': {'$in': symbols}}), Condition('191', {'z': {'$in': symbols}})))):
                     print('Bib record for {symbols} already exists')
-                else:    
+                else:
                     new_bib = Bib()
 
                     for symbol in symbols:
@@ -257,7 +259,6 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
 
                     new_bib.commit(user='gDoc import')
                     print(json.dumps({'info': 'Created new bib', 'data': {'record_id': new_bib.id}}))
-
     except Exception as e:
         print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
         
