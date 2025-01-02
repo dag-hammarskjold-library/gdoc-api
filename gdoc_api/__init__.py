@@ -96,7 +96,7 @@ class Gdoc():
 
                     # check both jobId and odsNo as the name of the file, as it has varied in the past 
                     for field in ('jobId', 'odsNo'):
-                        if any(filter(lambda x: re.match(rf'.*?{doc[field]}\.pdf', x), self.zipfile.namelist())):
+                        if any(filter(lambda x: re.match(r'.*?' + doc[field] + r'\.pdf', x), self.zipfile.namelist())):
                             found = True
 
                     if not found:
