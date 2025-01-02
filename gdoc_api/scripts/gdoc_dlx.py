@@ -17,7 +17,8 @@ def get_args(**kwargs):
     nr.add_argument('--symbol', help='get only the files for the specified symbol')
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
-    nr.add_argument('--recursive', action='store_true', help='download the files one symbol at a time')
+    nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
+    nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
     nr.add_argument('--create_bibs', action='store_true', help='Create bib record for symbol if it doesn\'t exist')
 
@@ -51,28 +52,32 @@ def get_args(**kwargs):
     #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
     #c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-{env}-api-secrets'))['password'])
 
-    # If running as a function, convert the function args to command line args
-    # so they can be parsed by argparse
     if kwargs:
-        sys.argv = [sys.argv[0]]
-        params = ('station', 'date', 'symbol', 'language', 'overwrite', 'recursive', 'connection_string', 'database', 's3_bucket', 'data_only', 'create_bibs')
-
-        for param in ('station', 'date'):
-            if param not in params:
-                raise Exception(f'Required param {param}')
-
-        for param, arg in kwargs.items():
-            if param not in params:
-                raise Exception(f'Invalid argument: "{param}"')
-
-            if param in ('overwrite', 'recursive', 'data_only', 'create_bibs'):
-                # boolean args
-                if arg == True:
-                    sys.argv.append(f'--{param}')
-            else:
-                sys.argv.append(f'--{param}={arg}')
+        process_kwargs(**kwargs)
 
     return parser.parse_args()
+
+def process_kwargs(**kwargs):
+    """If being imported as a function, process kwargs into command line args 
+    so they can be parsed by argparse"""
+
+    sys.argv = [sys.argv[0]]
+    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
+
+    for param in ('station', 'date'):
+        if param not in params:
+            raise Exception(f'Required param {param}')
+
+    for param, arg in kwargs.items():
+        if param not in params:
+            raise Exception(f'Invalid argument: "{param}"')
+
+        if param in ('overwrite', 'recursive', 'data_only'):
+            # boolean args
+            if arg == True:
+                sys.argv.append(f'--{param}')
+        else:
+            sys.argv.append(f'--{param}={arg}')
 
 def set_log():
     pass

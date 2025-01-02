@@ -1,1 +1,1 @@
-gdoc-api @ git+https://github.com/dag-hammarskjold-library/gdoc-api@v1.1.4
+gdoc-api @ git+https://github.com/dag-hammarskjold-library/gdoc-api@v1.1.4.1
