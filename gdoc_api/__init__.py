@@ -112,8 +112,10 @@ class Gdoc():
 
                     # check both jobId and odsNo as the name of the file, as it has varied in the past 
                     for field in ('jobId', 'odsNo'):
-                        if any(filter(lambda x: re.match(rf'.*?{doc[field]}\.pdf', x), self.zipfile.namelist())):
-                            found = True
+                        if file_id := doc.get(field):
+                            # look for a file with the file id anywhere in the filename
+                            if any(filter(lambda x: re.search(file_id + r'\w*\.pdf$', x), self.zipfile.namelist())):
+                                found = True
 
                     if not found:
                         print(json.dumps({'warning': f'File for {doc["symbol1"]} not found in zip file'}))
@@ -128,19 +130,19 @@ class Gdoc():
         at once.'''
 
         for name in self.zipfile.namelist():
-            # filenames contain a series of digits preceeding the file extension that can be matched to the metadata
-            match = re.match(r'.*?(\d+)\.pdf$', name)
+            # filenames contain a series of digits (and letters?) preceeding the file extension that can be matched to the metadata
+            match = re.search(r'(\w+)\.pdf$', name)
 
             if match:
-                filename = int(match.group(1))
+                filename = match.group(1)
 
                 # check both jobId and odsNo in the metadata, as the field used has varied in the past
-                if file_data := next(filter(lambda x: x['jobId'] == str(filename), self.data), None):
+                if file_data := next(filter(lambda x: x['jobId'] == filename, self.data), None):
                     yield callback(self.zipfile.open(name), file_data)
-                elif file_data := next(filter(lambda x: x['odsNo'] == str(filename), self.data), None):
+                elif file_data := next(filter(lambda x: x['odsNo'] == filename, self.data), None):
                     yield callback(self.zipfile.open(name), file_data)
                 else:  
-                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))   
+                    print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))
 
 class Schema():
     pass
