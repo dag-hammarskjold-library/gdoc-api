@@ -147,7 +147,7 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
 
         if data['distributionType'] == 'RES':
             # printing to STDOUT allows caputre in Cloudwatch. Cloudwatch queries can parse JSON strings for searching the logs
-            print(json.dumps({'warning': 'Skipping document with distribution type "RES"', 'symbol': data['symbol1']}))
+            print(json.dumps({'info': 'Skipping document with distribution type "RES"', 'symbol': data['symbol1']}))
             
             return
         
