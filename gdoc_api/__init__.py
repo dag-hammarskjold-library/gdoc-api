@@ -1,5 +1,5 @@
 import os, requests, urllib, json, re, shutil
-from typing import Optional, Self, Callable, Iterator
+from typing import Optional, Callable, Iterator
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
 from zipfile import ZipFile
@@ -66,7 +66,7 @@ class Gdoc():
 
         self.parameters[name] = value
 
-    def download(self, save_as: os.PathLike = None) -> Self:
+    def download(self, save_as: os.PathLike = None):
         """Make the API request using the parameters provided and save the
         returned Zip file. The Zip file is stored in memory. If `save_as` is 
         provided, the Zip file is also saved to that localtion on the local disk.
