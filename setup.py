@@ -9,7 +9,7 @@ with open("requirements.txt") as f:
 
 setup(
     name = 'gdoc_api',
-    version = '1.1.4.1',
+    version = '1.2.0.dev',
     url = None,
     author = 'United Nations Dag Hammarskjöld Library',
     author_email = 'library-ny@un.org',
@@ -20,7 +20,7 @@ setup(
     description = 'Import files from gDoc API into DLX',
     long_description = long_description,
     long_description_content_type = "text/markdown",
-    python_requires = '>=3.8',
+    python_requires = '>=3.9',
     entry_points = {
         'console_scripts': [
             'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:run'
