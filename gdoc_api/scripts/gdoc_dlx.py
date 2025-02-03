@@ -62,7 +62,7 @@ def process_kwargs(**kwargs):
     so they can be parsed by argparse"""
 
     sys.argv = [sys.argv[0]]
-    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'rescursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
+    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'recursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
 
     for param in ('station', 'date'):
         if param not in params:
