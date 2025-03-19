@@ -69,7 +69,7 @@ class Gdoc():
     def download(self, save_as: os.PathLike = None):
         """Make the API request using the parameters provided and save the
         returned Zip file. The Zip file is stored in memory. If `save_as` is 
-        provided, the Zip file is also saved to that localtion on the local disk.
+        provided, the Zip file is also saved to that location on the local disk.
         """
 
         temp = TemporaryFile('wb+')
@@ -113,8 +113,8 @@ class Gdoc():
                     # check both jobId and odsNo as the name of the file, as it has varied in the past 
                     for field in ('jobId', 'odsNo'):
                         if file_id := doc.get(field):
-                            # look for a file with the file id anywhere in the filename
-                            if any(filter(lambda x: re.search(file_id + r'\w*\.pdf$', x), self.zipfile.namelist())):
+                            # look for a pdf with the file id anywhere in the filename
+                            if any(filter(lambda x: file_id in x and x[-4:] == '.pdf', self.zipfile.namelist())):
                                 found = True
 
                     if not found:
