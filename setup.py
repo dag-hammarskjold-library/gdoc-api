@@ -8,8 +8,8 @@ with open("requirements.txt") as f:
     requirements = list(filter(None,f.read().split('\n')))
 
 setup(
+    version = '1.2.0.1.dev',
     name = 'gdoc_api',
-    version = '1.2.0.dev',
     url = None,
     author = 'United Nations Dag Hammarskjöld Library',
     author_email = 'library-ny@un.org',
