@@ -1,8 +1,10 @@
-import pytest
+import pytest, os
 from gdoc_api import Gdoc
 from gdoc_api.scripts import gdoc_dlx
 from moto import mock_aws
 import boto3, os, json
+
+os.environ.update({'DLX_ENV': 'testing'})
 
 @pytest.fixture(scope="function")
 def ssm_mock():
@@ -20,16 +22,7 @@ def ssm_mock():
                 "client_id": "test_client_id",
                 "client_secret": "test_client_secret",
                 "scope": ["api://test_scope/.default"],
-                "bucket": "test_bucket",
-                "database_name": "test_db",
-                "connect_string_param": "test-connect-string"
             }),
-            Type="String"
-        )
-        # the database connection string has its own SSM param
-        ssm.put_parameter(
-            Name="test-connect-string",
-            Value="mongodb://foo.bar",
             Type="String"
         )
         yield ssm
