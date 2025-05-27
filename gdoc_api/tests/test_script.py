@@ -13,7 +13,7 @@ def ssm_mock():
         ssm = boto3.client("ssm")
         # the mock AWS SSM data to be fetched as the arguments for the script
         ssm.put_parameter(
-            Name="gdoc-qa-api-secrets",
+            Name="gdoc-testing-api-secrets",
             Value=json.dumps({
                 "token_url": "https://foo.bar.baz/oauth2/v2.0/token",
                 "api_url": "https://foo.bar.baz/GetODSDocuments",
@@ -29,11 +29,8 @@ def ssm_mock():
         yield ssm
 
 def test_args(ssm_mock):
-    # Test that args provided to function call are correctly converted to
-    # sys.argv
-
-    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'recursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
-    bools = ('recursive', 'overwrite', 'data_only')
+    # Test that args provided to function call are correctly converted to ArgumentParser args.
+    # SSM is required to fetch gdoc creds
 
     kwargs = {
         'station': 'NY',
@@ -43,9 +40,22 @@ def test_args(ssm_mock):
     }
 
     args = gdoc_dlx.get_args(**kwargs)
-    
+    gdoc_params = ('gdoc_token_url', 'gdoc_api_url', 'gdoc_ocp_apim_subscription_key', 'gdoc_client_id', 'gdoc_client_secret', 'gdoc_scope')
+
+    for name in gdoc_params:
+        # ensure the godoc credentials have been retrieved
+        assert getattr(args, (name))
+
+    assert args.connection_string == 'dummy'
+
     assert args.station == 'NY'
     assert args.date == '1970-01-01'
     assert args.recursive
     assert not args.overwrite
     assert not args.data_only
+
+    kwargs.update({'symbol': 'A/RES/1'})
+    kwargs.update({'language': 'E'})
+    args = gdoc_dlx.get_args(**kwargs)
+    assert args.symbol == 'A/RES/1'
+    assert args.language == 'E'

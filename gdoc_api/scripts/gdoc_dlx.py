@@ -53,10 +53,6 @@ def get_args(**kwargs):
     if gdoc_env not in valid:
         raise Exception('Environment variable "GDOC_ENV" must be one of {valid}')
     
-    if gdoc_env == 'testing':
-        # use qa creds for now in testing
-        gdoc_env = 'qa'
-    
     # args for the gdoc env params are stored as a json string 
     gdoc_args = json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))
     
