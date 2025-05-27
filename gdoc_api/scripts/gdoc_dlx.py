@@ -30,7 +30,9 @@ def get_args(**kwargs):
     # get from AWS if not provided
     ssm = boto3.client('ssm')
 
-    def param(name):
+    def param(name: str) -> str:
+        # returns the string value of the parameter in aws ssm.
+        # note this may be a json string
         return ssm.get_parameter(Name=name)['Parameter']['Value']
     
     # dlx env
@@ -53,14 +55,17 @@ def get_args(**kwargs):
     
     if gdoc_env == 'testing':
         # use qa creds for now in testing
-        gdoc_env = 'qa' 
+        gdoc_env = 'qa'
     
-    c.add_argument('--gdoc_token_url', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['token_url'])
-    c.add_argument('--gdoc_api_url', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['api_url'])
-    c.add_argument('--gdoc_ocp_apim_subscription_key', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['ocp_apim_subscription_key'])
-    c.add_argument('--gdoc_client_id', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['client_id'])
-    c.add_argument('--gdoc_client_secret', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['client_secret'])
-    c.add_argument('--gdoc_scope', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['scope'])
+    # args for the gdoc env params are stored as a json string 
+    gdoc_args = json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))
+    
+    c.add_argument('--gdoc_token_url', default=gdoc_args['token_url'])
+    c.add_argument('--gdoc_api_url', default=gdoc_args['api_url'])
+    c.add_argument('--gdoc_ocp_apim_subscription_key', default=gdoc_args['ocp_apim_subscription_key'])
+    c.add_argument('--gdoc_client_id', default=gdoc_args['client_id'])
+    c.add_argument('--gdoc_client_secret', default=gdoc_args['client_secret'])
+    c.add_argument('--gdoc_scope', default=gdoc_args['scope'])
 
     # Deprecated, replaced by client ID and secret
     #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
