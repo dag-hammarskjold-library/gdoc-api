@@ -34,19 +34,26 @@ def get_args(**kwargs):
         return ssm.get_parameter(Name=name)['Parameter']['Value']
     
     # dlx env
-    if dlx_env := os.getenv("DLX_ENV"):
-        if dlx_env not in ('testing', 'dev', 'uat', 'prod'):
-            raise Exception
-    else:
-        raise Exception
+    dlx_env = os.getenv("DLX_ENV")
+    valid = ('testing', 'dev', 'uat', 'prod')
+    
+    if dlx_env not in valid:
+        raise Exception('Environment variable "DLX_ENV" must be one of {valid}')
         
     c.add_argument('--connection_string', default='dummy' if dlx_env == 'testing' else param(f'{dlx_env}ISSU-admin-connect-string'))
     c.add_argument('--database', default='undlFiles' if dlx_env in ['prod', 'uat'] else 'dev_undlFiles')
     c.add_argument('--s3_bucket', default='undlFiles' if dlx_env == 'prod' else 'dev-undl-files')
 
     # gDoc env - can be "qa" or "prod"
-    gdoc_env = os.getenv("GDOC_ENV", "qa")
-    print("Connecting to GDOC:", gdoc_env)
+    gdoc_env = os.getenv("GDOC_ENV")
+    valid = ('testing', 'qa', 'prod')
+        
+    if gdoc_env not in valid:
+        raise Exception('Environment variable "GDOC_ENV" must be one of {valid}')
+    
+    if gdoc_env == 'testing':
+        # use qa creds for now in testing
+        gdoc_env = 'qa' 
     
     c.add_argument('--gdoc_token_url', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['token_url'])
     c.add_argument('--gdoc_api_url', default=json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))['api_url'])

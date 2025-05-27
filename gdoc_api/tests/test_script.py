@@ -5,6 +5,7 @@ from moto import mock_aws
 import boto3, os, json
 
 os.environ.update({'DLX_ENV': 'testing'})
+os.environ.update({'GDOC_ENV': 'testing'})
 
 @pytest.fixture(scope="function")
 def ssm_mock():
