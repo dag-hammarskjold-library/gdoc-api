@@ -5,15 +5,10 @@ from moto import mock_aws
 import boto3, os, json
 
 @pytest.fixture(scope="function")
-def aws_credentials():
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
-@pytest.fixture(scope="function")
-def ssm_mock(aws_credentials):
+def ssm_mock():
     with mock_aws():
         ssm = boto3.client("ssm")
+        # the mock AWS SSM data to be fetched as the arguments for the script
         ssm.put_parameter(
             Name="gdoc-qa-api-secrets",
             Value=json.dumps({
@@ -31,13 +26,13 @@ def ssm_mock(aws_credentials):
             }),
             Type="String"
         )
+        # the database connection string has its own SSM param
         ssm.put_parameter(
             Name="test-connect-string",
             Value="mongodb://foo.bar",
             Type="String"
         )
         yield ssm
-
 
 def test_args(ssm_mock):
     # Test that args provided to function call are correctly converted to
