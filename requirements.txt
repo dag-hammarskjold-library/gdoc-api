@@ -1,5 +1,4 @@
-dlx @ git+https://github.com/dag-hammarskjold-library/dlx@v1.4.18
+dlx @ git+https://github.com/dag-hammarskjold-library/dlx@v1.4.22.2
 oauthlib==3.2.2
 requests-oauthlib==2.0.0
-pytest==8.3.3
 setuptools==80.8.0
