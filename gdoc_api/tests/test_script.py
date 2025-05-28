@@ -4,8 +4,15 @@ from gdoc_api.scripts import gdoc_dlx
 from moto import mock_aws
 import boto3, os, json
 
-os.environ.update({'DLX_ENV': 'testing'})
-os.environ.update({'GDOC_ENV': 'testing'})
+os.environ.update(
+    {
+        'DLX_ENV': 'testing',
+        'GDOC_ENV': 'testing',
+        'AWS_ACCESS_KEY_ID': 'testing',
+        'AWS_SECRET_ACCESS_KEY': 'testing',
+        'AWS_DEFAULT_REGION': 'us-east-1'
+    }
+)
 
 @pytest.fixture(scope="function")
 def ssm_mock():
