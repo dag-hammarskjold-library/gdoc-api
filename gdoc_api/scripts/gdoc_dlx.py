@@ -21,32 +21,47 @@ def get_args(**kwargs):
     nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
     nr.add_argument('--create_bibs', action='store_true', help='Create bib record for symbol if it doesn\'t exist')
-
-    # get from AWS if not provided
-    ssm = boto3.client('ssm')
-    # Can be "qa" or "prod"
-    env = os.getenv("GDOC_ENV", "qa")
-    print("Connecting to GDOC:",env)
-    
-    def param(name):
-        return ssm.get_parameter(Name=name)['Parameter']['Value']
-    
+ 
     c = parser.add_argument_group(
         title='credentials', 
         description='these arguments are supplied by AWS SSM if AWS credentials are configured',
     )
 
-    connect_string_param = json.loads(param(f'gdoc-{env}-api-secrets'))['connect_string_param']
+    # get from AWS if not provided
+    ssm = boto3.client('ssm')
 
-    c.add_argument('--connection_string', default=param(connect_string_param))
-    c.add_argument('--database', default=json.loads(param(f'gdoc-{env}-api-secrets'))['database_name'])
-    c.add_argument('--s3_bucket', default=json.loads(param(f'gdoc-{env}-api-secrets'))['bucket'])
-    c.add_argument('--gdoc_token_url', default=json.loads(param(f'gdoc-{env}-api-secrets'))['token_url'])
-    c.add_argument('--gdoc_api_url', default=json.loads(param(f'gdoc-{env}-api-secrets'))['api_url'])
-    c.add_argument('--gdoc_ocp_apim_subscription_key', default=json.loads(param(f'gdoc-{env}-api-secrets'))['ocp_apim_subscription_key'])
-    c.add_argument('--gdoc_client_id', default=json.loads(param(f'gdoc-{env}-api-secrets'))['client_id'])
-    c.add_argument('--gdoc_client_secret', default=json.loads(param(f'gdoc-{env}-api-secrets'))['client_secret'])
-    c.add_argument('--gdoc_scope', default=json.loads(param(f'gdoc-{env}-api-secrets'))['scope'])
+    def param(name: str) -> str:
+        # returns the string value of the parameter in aws ssm.
+        # note this may be a json string
+        return ssm.get_parameter(Name=name)['Parameter']['Value']
+    
+    # dlx env
+    dlx_env = os.getenv("DLX_ENV")
+    valid = ('testing', 'dev', 'uat', 'prod')
+    
+    if dlx_env not in valid:
+        raise Exception('Environment variable "DLX_ENV" must be one of {valid}')
+        
+    c.add_argument('--connection_string', default='dummy' if dlx_env == 'testing' else param(f'{dlx_env}ISSU-admin-connect-string'))
+    c.add_argument('--database', default='undlFiles' if dlx_env in ['prod', 'uat'] else 'dev_undlFiles')
+    c.add_argument('--s3_bucket', default='undlFiles' if dlx_env == 'prod' else 'dev-undl-files')
+
+    # gDoc env - can be "qa" or "prod"
+    gdoc_env = os.getenv("GDOC_ENV")
+    valid = ('testing', 'qa', 'prod')
+        
+    if gdoc_env not in valid:
+        raise Exception('Environment variable "GDOC_ENV" must be one of {valid}')
+    
+    # args for the gdoc env params are stored as a json string 
+    gdoc_args = json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))
+    
+    c.add_argument('--gdoc_token_url', default=gdoc_args['token_url'])
+    c.add_argument('--gdoc_api_url', default=gdoc_args['api_url'])
+    c.add_argument('--gdoc_ocp_apim_subscription_key', default=gdoc_args['ocp_apim_subscription_key'])
+    c.add_argument('--gdoc_client_id', default=gdoc_args['client_id'])
+    c.add_argument('--gdoc_client_secret', default=gdoc_args['client_secret'])
+    c.add_argument('--gdoc_scope', default=gdoc_args['scope'])
 
     # Deprecated, replaced by client ID and secret
     #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
