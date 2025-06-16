@@ -66,3 +66,6 @@ def test_args(ssm_mock):
     args = gdoc_dlx.get_args(**kwargs)
     assert args.symbol == 'A/RES/1'
     assert args.language == 'E'
+
+def test_run():
+    assert gdoc_dlx.run()

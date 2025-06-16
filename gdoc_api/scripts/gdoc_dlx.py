@@ -237,10 +237,13 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
     # group the data by symbol for bib record creation later
     symbols_index = {}
 
-    for data in g.data:
-        symbol = data.get('symbol1')
-        symbols_index.setdefault(symbol, [])
-        symbols_index[symbol].append(data)
+    try:
+        for data in g.data:
+            symbol = data.get('symbol1')
+            symbols_index.setdefault(symbol, [])
+            symbols_index[symbol].append(data)
+    except Exception as e:
+        print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
     
     i = 0
     
