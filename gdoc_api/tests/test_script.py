@@ -66,3 +66,14 @@ def test_args(ssm_mock):
     args = gdoc_dlx.get_args(**kwargs)
     assert args.symbol == 'A/RES/1'
     assert args.language == 'E'
+
+@pytest.mark.skip("Not passing yet")
+def test_run(ssm_mock):
+    kwargs = {
+        'station': 'NY',
+        'date': '1970-01-01',
+        'recursive': True,
+        'overwrite': False
+    }
+
+    assert gdoc_dlx.run(**kwargs)

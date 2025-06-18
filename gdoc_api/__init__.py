@@ -2,7 +2,7 @@ import os, requests, urllib, json, re, shutil
 from typing import Optional, Callable, Iterator
 from datetime import datetime, timezone
 from tempfile import TemporaryFile
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
@@ -92,7 +92,10 @@ class Gdoc():
             for chunk in response.iter_content(8192):
                 temp.write(chunk)
                 
-            self._zipfile = ZipFile(temp)
+            try:
+                self._zipfile = ZipFile(temp)
+            except BadZipFile:
+                raise Exception(f'Data returned by API cannot be read as a zip file: {response.text} : {url}')
 
             if save_as:
                 temp.seek(0)
@@ -120,7 +123,7 @@ class Gdoc():
                     if not found:
                         print(json.dumps({'warning': f'File for {doc["symbol1"]} not found in zip file'}))
         else:
-            raise Exception('API error:\n' + response.text)
+            raise Exception(f'API reponse not OK: {response.text} : {url}')
 
         return self
 
