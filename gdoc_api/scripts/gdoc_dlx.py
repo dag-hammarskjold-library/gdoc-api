@@ -44,7 +44,7 @@ def get_args(**kwargs):
         
     c.add_argument('--connection_string', default='dummy' if dlx_env == 'testing' else param(f'{dlx_env}ISSU-admin-connect-string'))
     c.add_argument('--database', default='undlFiles' if dlx_env in ['prod', 'uat'] else 'dev_undlFiles')
-    c.add_argument('--s3_bucket', default='undlFiles' if dlx_env == 'prod' else 'dev-undl-files')
+    c.add_argument('--s3_bucket', default='undl-files' if dlx_env == 'prod' else 'dev-undl-files')
 
     # gDoc env - can be "qa" or "prod"
     gdoc_env = os.getenv("GDOC_ENV")
