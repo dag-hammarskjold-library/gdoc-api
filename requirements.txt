@@ -1,4 +1,4 @@
 dlx @ git+https://github.com/dag-hammarskjold-library/dlx@v1.4.22.2
-oauthlib==3.2.2
+oauthlib==3.3.1
 requests-oauthlib==2.0.0
 setuptools==80.9.0
