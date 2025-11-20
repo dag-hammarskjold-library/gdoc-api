@@ -18,7 +18,7 @@ def get_args(**kwargs):
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
     nr.add_argument('--recursive', action='store_true', help='download the files one synbol at a time')
-    nr.add_argument('--save_as', help='save the payload (zip file) in the specified location')
+    nr.add_argument('--save_as', help='save the payload (zip file) to the specified location and quit without uploading files to DLX')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
     nr.add_argument('--create_bibs', action='store_true', help='Create bib record for symbol if it doesn\'t exist')
  
@@ -40,7 +40,7 @@ def get_args(**kwargs):
     valid = ('testing', 'dev', 'uat', 'prod')
     
     if dlx_env not in valid:
-        raise Exception('Environment variable "DLX_ENV" must be one of {valid}')
+        raise Exception(f'Environment variable "DLX_ENV" must be one of {valid}')
         
     c.add_argument('--connection_string', default='dummy' if dlx_env == 'testing' else param(f'{dlx_env}ISSU-admin-connect-string'))
     c.add_argument('--database', default='undlFiles' if dlx_env in ['prod', 'uat'] else 'dev_undlFiles')
@@ -51,7 +51,7 @@ def get_args(**kwargs):
     valid = ('testing', 'qa', 'prod')
         
     if gdoc_env not in valid:
-        raise Exception('Environment variable "GDOC_ENV" must be one of {valid}')
+        raise Exception(f'Environment variable "GDOC_ENV" must be one of {valid}')
     
     # args for the gdoc env params are stored as a json string 
     gdoc_args = json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))
@@ -125,8 +125,8 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
     g.set_param('dutyStation', args.station or '')
 
     if args.recursive:
-        if args.data_only:
-            raise Exception('--data_only not compatible with --recursive')
+        if args.data_only or args.save_as:
+            raise Exception('--data_only and --save_as not compatible with --recursive')
         
         # call the run function for each indvidual symbol
         seen = {}
@@ -153,6 +153,11 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
     elif args.data_only:
         g.set_param('DownloadFiles', 'N')
         print(json.dumps(g.data))
+        exit()
+    elif args.save_as:
+        print(f'Saving payload to file path: {args.save_as}')
+        g.download(save_as=args.save_as)
+        print('Done')
         exit()
     else:
         g.set_param('DownloadFiles', 'Y')
