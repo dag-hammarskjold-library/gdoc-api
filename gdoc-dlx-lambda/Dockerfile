@@ -1,10 +1,10 @@
-FROM public.ecr.aws/lambda/python:3.12
+FROM public.ecr.aws/lambda/python:3.14
 
 # Copy requirements.txt
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
 # Install git
-RUN yum install -y git-all
+RUN dnf install -y git-all
 
 # Install the specified packages
 RUN pip install -r requirements.txt
