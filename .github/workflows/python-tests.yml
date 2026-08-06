@@ -14,7 +14,7 @@ env:
   DLX_REST_TESTING: True
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
     strategy:
@@ -38,6 +38,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
     - name: Build and run in Docker
       id: build-image
       run: |
@@ -46,5 +49,3 @@ jobs:
         echo "gdoc-api @ git+https://github.com/dag-hammarskjold-library/gdoc-api@$ref" > requirements.txt
         docker build -t python_test_image .
         docker run --rm python_test_image pytest -vv
-
-        
