@@ -22,7 +22,11 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{github.ref}}
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -34,7 +38,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run tests
+    - name: Build and run in Docker
+      id: build-image
       run: |
-        pytest -vv
+        cd ./gdoc-dlx-lambda
+        ref=`echo ${{github.ref}} |cut -d'/' -f 3`
+        echo "gdoc-api @ git+https://github.com/dag-hammarskjold-library/gdoc-api@$ref" > requirements.txt
+        docker build -t python_test_image .
+        docker run --rm python_test_image pytest -vv
+
         
