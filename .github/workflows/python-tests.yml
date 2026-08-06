@@ -41,6 +41,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{github.ref}}
+
     - name: Build and run in Docker
       id: build-image
       run: |
