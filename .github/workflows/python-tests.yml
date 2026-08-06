@@ -51,7 +51,11 @@ jobs:
       id: build-image
       run: |
         cd ./gdoc-dlx-lambda
-        ref=`echo ${{github.ref}} |cut -d'/' -f 3`
+        if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+          ref="${{ github.event.pull_request.head.sha }}"
+        else
+          ref="${GITHUB_SHA}"
+        fi
         echo "gdoc-api @ git+https://github.com/dag-hammarskjold-library/gdoc-api@$ref" > requirements.txt
         docker build -t python_test_image .
         docker run --rm python_test_image pytest -vv
