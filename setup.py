@@ -8,7 +8,7 @@ with open("requirements.txt") as f:
     requirements = list(filter(None,f.read().split('\n')))
 
 setup(
-    version = '1.2.2.dev',
+    version = '1.2.3',
     name = 'gdoc_api',
     url = None,
     author = 'United Nations Dag Hammarskjöld Library',
@@ -20,7 +20,7 @@ setup(
     description = 'Import files from gDoc API into DLX',
     long_description = long_description,
     long_description_content_type = "text/markdown",
-    python_requires = '>=3.9',
+    python_requires = '>=3.10',
     entry_points = {
         'console_scripts': [
             'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:run'
