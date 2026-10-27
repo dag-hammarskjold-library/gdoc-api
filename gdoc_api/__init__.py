@@ -8,6 +8,16 @@ from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 
 TODAY = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+JOB_ID_RE = re.compile(r'(\d{7})([A-Z])?')
+
+def same_job(job_id, filename) -> bool:
+    """True if a metadata jobId or odsNo and a zip filename share the same 7 digit number.
+    A trailing letter is optional on the ID side (jobId has a language code, odsNo has none) and is ignored."""
+    a = JOB_ID_RE.fullmatch(str(job_id or ''))
+    b = JOB_ID_RE.fullmatch(str(filename or ''))
+    return bool(a and b and a.group(1) == b.group(1))
+
 class Gdoc():
     def __init__(self, *, client_id, client_secret, token_url,
         api_url, ocp_apim_subscription_key, scope):
@@ -117,7 +127,7 @@ class Gdoc():
                     for field in ('jobId', 'odsNo'):
                         if file_id := doc.get(field):
                             # look for a pdf with the file id anywhere in the filename
-                            if any(filter(lambda x: file_id in x and x[-4:] == '.pdf', self.zipfile.namelist())):
+                            if any(filter(lambda x: (file_id in x or same_job(file_id, os.path.basename(x)[:-4])) and x[-4:] == '.pdf', self.zipfile.namelist())):
                                 found = True
 
                     if not found:
@@ -140,9 +150,9 @@ class Gdoc():
                 filename = match.group(1)
 
                 # check both jobId and odsNo in the metadata, as the field used has varied in the past
-                if file_data := next(filter(lambda x: x['jobId'] == filename, self.data), None):
+                if file_data := next(filter(lambda x: x['jobId'] == filename or same_job(x['jobId'], filename), self.data), None):
                     yield callback(self.zipfile.open(name), file_data)
-                elif file_data := next(filter(lambda x: x['odsNo'] == filename, self.data), None):
+                elif file_data := next(filter(lambda x: x['odsNo'] == filename or same_job(x['odsNo'], filename), self.data), None):
                     yield callback(self.zipfile.open(name), file_data)
                 else:  
                     print(json.dumps({'warning': f'Data for "{name}" not found in zip file'}))
