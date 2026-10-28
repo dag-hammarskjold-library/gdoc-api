@@ -54,65 +54,36 @@ jobs:
         - name: Update EventBridge Rules
           id: update-rules
           run: |
-            aws events put-rule \
-            --name gdoc-dlx-lambda-ny-1day \
-            --schedule-expression "cron(0 8 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-ny-1day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":1,\"description\":\"All NY documents from yesterday.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-ge-1day \
-            --schedule-expression "cron(15 6 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-ge-1day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":1,\"description\":\"All GE documents from yesterday.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-ny-2day \
-            --schedule-expression "cron(30 8 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-ny-2day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":2,\"description\":\"All NY documents from 2 days ago.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-ge-2day \
-            --schedule-expression "cron(45 6 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-ge-2day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":2,\"description\":\"All GE documents from 2 days ago.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-ny-3day \
-            --schedule-expression "cron(0 9 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-ny-3day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"NY\",\"days_ago\":3,\"description\":\"All NY documents from 3 days ago.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-ge-3day \
-            --schedule-expression "cron(15 7 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-ge-3day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"GE\",\"days_ago\":3,\"description\":\"All GE documents from 3 days ago.\"}"}]'
-          
-            aws events put-rule \
-            --name gdoc-dlx-lambda-vienna-1day \
-            --schedule-expression "cron(0 3 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-vienna-1day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"Vienna\",\"days_ago\":1,\"description\":\"All Vienna documents from 1 day ago.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-vienna-2day \
-            --schedule-expression "cron(15 3 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-vienna-2day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"Vienna\",\"days_ago\":2,\"description\":\"All Vienna documents from 2 days ago.\"}"}]'
-
-            aws events put-rule \
-            --name gdoc-dlx-lambda-vienna-3day \
-            --schedule-expression "cron(30 3 * * ? *)"
-            aws events put-targets \
-            --rule gdoc-dlx-lambda-vienna-3day \
-            --targets '[{"Id":"1","Arn":"${{ secrets.FUNCTION_ARN }}","Input":"{\"duty_station\":\"Vienna\",\"days_ago\":3,\"description\":\"All Vienna documents from 3 days ago.\"}"}]'
+            while read -r loc day cron station; do
+              RULE_NAME="gdoc-dlx-lambda-${loc}-${day}day"
+              
+              echo "Updating rule: $RULE_NAME"
+              
+              aws events put-rule \
+                --name "$RULE_NAME" \
+                --schedule-expression "cron($cron)"
+                
+              aws events put-targets \
+                --rule "$RULE_NAME" \
+                --targets "[{\"Id\":\"1\",\"Arn\":\"${{ secrets.FUNCTION_ARN }}\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"days_ago\\\":$day,\\\"description\\\":\\\"All $station documents from $day days ago.\\\"}\"}]"
+                
+            done <<EOF
+            ny 1 "0 8 * * ? *" NY
+            ny 2 "15 8 * * ? *" NY
+            ny 3 "30 8 * * ? *" NY
+            ge 1 "0 5 * * ? *" GE
+            ge 2 "15 5 * * ? *" GE
+            ge 3 "30 5 * * ? *" GE
+            nairobi 1 "0 4 * * ? *" Nairobi
+            nairobi 2 "15 4 * * ? *" Nairobi
+            nairobi 3 "30 4 * * ? *" Nairobi
+            vienna 1 "0 3 * * ? *" Vienna
+            vienna 2 "15 3 * * ? *" Vienna
+            vienna 3 "30 3 * * ? *" Vienna
+            beirut 1 "0 1 * * ? *" Beirut
+            beirut 2 "15 1 * * ? *" Beirut
+            beirut 3 "30 1 * * ? *" Beirut
+            bangkok 1 "0 19 * * ? *" Bangkok
+            bangkok 2 "15 19 * * ? *" Bangkok
+            bangkok 3 "30 19 * * ? *" Bangkok
+            EOF
