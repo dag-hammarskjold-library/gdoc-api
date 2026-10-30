@@ -249,7 +249,28 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
             symbols_index[symbol].append(data)
     except Exception as e:
         print(json.dumps({'error': '; '.join(re.split('[\r\n]', str(e)))}))
-    
+
+    # Log the entire data object in gdoc_log for later retrieval. We want: time as a MongoDB datetime object, gdoc date, duty station, and g.data
+    try:
+        DLX.handle['gdoc_log'].insert_one(
+            {
+                'time': datetime.now(timezone.utc),
+                'gdoc_date': args.date,
+                'duty_station': args.station,
+                'data': g.data
+            }
+        )
+    except Exception as e:
+        # Log an error instead.
+        DLX.handle['gdoc_log'].insert_one(
+            {
+                'time': datetime.now(timezone.utc),
+                'gdoc_date': args.date,
+                'duty_station': args.station,
+                'error': '; '.join(re.split('[\r\n]', str(e)))
+            }
+        )
+
     i = 0
     
     try:
