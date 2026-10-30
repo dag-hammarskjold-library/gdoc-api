@@ -73,4 +73,6 @@ jobs:
             nairobi "*/5 * * * ? *" Nairobi
             beirut "*/5 * * * ? *" Beirut
             bangkok "*/5 * * * ? *" Bangkok
+            ny "0 * * * ? *" NY
+            ge "10 * * * ? *" GE
             EOF
