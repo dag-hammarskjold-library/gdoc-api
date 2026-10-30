@@ -56,36 +56,44 @@ jobs:
         - name: Update EventBridge Rules
           id: update-rules
           run: |
-            while read -r loc day cron station; do
-              RULE_NAME="gdoc-dlx-lambda-${loc}-${day}day"
-              
-              echo "Updating rule: $RULE_NAME"
-              
-              aws events put-rule \
-                --name "$RULE_NAME" \
-                --schedule-expression "cron($cron)"
+            # Use a pipe | as the delimiter to allow spaces in the cron expression
+            while IFS='|' read -r loc day cron station; do
+                # Skip empty lines or lines starting with #
+                [[ -z "$loc" || "$loc" =~ ^# ]] && continue
+
+                RULE_NAME="***-${loc}-${day}day"
                 
-              aws events put-targets \
-                --rule "$RULE_NAME" \
-                --targets "[{\"Id\":\"1\",\"Arn\":\"${{ secrets.FUNCTION_ARN }}\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"days_ago\\\":$day,\\\"description\\\":\\\"All $station documents from $day days ago.\\\"}\"}]"
+                echo "Updating rule: $RULE_NAME"
                 
+                # Ensure the cron variable doesn't have literal quotes if they were in the file
+                # We strip quotes just in case they were included in the text file
+                clean_cron=$(echo "$cron" | sed 's/"//g')
+
+                aws events put-rule \
+                  --name "$RULE_NAME" \
+                  --schedule-expression "cron($clean_cron)"
+                  
+                aws events put-targets \
+                  --rule "$RULE_NAME" \
+                  --targets "[{\"Id\":\"1\",\"Arn\":\"***\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"days_ago\\\":$day,\\\"description\\\":\\\"All $station documents from $day days ago.\\\"}\"}]"
+                  
             done <<EOF
-            ny 1 "0 8 * * ? *" NY
-            ny 2 "15 8 * * ? *" NY
-            ny 3 "30 8 * * ? *" NY
-            ge 1 "0 5 * * ? *" GE
-            ge 2 "15 5 * * ? *" GE
-            ge 3 "30 5 * * ? *" GE
-            nairobi 1 "0 4 * * ? *" Nairobi
-            nairobi 2 "15 4 * * ? *" Nairobi
-            nairobi 3 "30 4 * * ? *" Nairobi
-            vienna 1 "0 3 * * ? *" Vienna
-            vienna 2 "15 3 * * ? *" Vienna
-            vienna 3 "30 3 * * ? *" Vienna
-            beirut 1 "0 1 * * ? *" Beirut
-            beirut 2 "15 1 * * ? *" Beirut
-            beirut 3 "30 1 * * ? *" Beirut
-            bangkok 1 "0 19 * * ? *" Bangkok
-            bangkok 2 "15 19 * * ? *" Bangkok
-            bangkok 3 "30 19 * * ? *" Bangkok
+            ny|1|0 8 * * ? *|NY
+            ny|2|15 8 * * ? *|NY
+            ny|3|30 8 * * ? *|NY
+            ge|1|0 5 * * ? *|GE
+            ge|2|15 5 * * ? *|GE
+            ge|3|30 5 * * ? *|GE
+            nairobi|1|0 4 * * ? *|Nairobi
+            nairobi|2|15 4 * * ? *|Nairobi
+            nairobi|3|30 4 * * ? *|Nairobi
+            vienna|1|0 3 * * ? *|Vienna
+            vienna|2|15 3 * * ? *|Vienna
+            vienna|3|30 3 * * ? *|Vienna
+            beirut|1|0 1 * * ? *|Beirut
+            beirut|2|15 1 * * ? *|Beirut
+            beirut|3|30 1 * * ? *|Beirut
+            bangkok|1|0 19 * * ? *|Bangkok
+            bangkok|2|15 19 * * ? *|Bangkok
+            bangkok|3|30 19 * * ? *|Bangkok
             EOF

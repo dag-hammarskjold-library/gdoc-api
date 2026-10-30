@@ -56,7 +56,7 @@ jobs:
         - name: Update EventBridge Rules
           id: update-rules
           run: |
-            while read -r loc cron station; do
+            while IFS='|' read -r loc cron station; do
               RULE_NAME="gdoc-dlx-retro-lambda-${loc}"
               
               echo "Updating rule: $RULE_NAME"
@@ -70,9 +70,9 @@ jobs:
                 --targets "[{\"Id\":\"1\",\"Arn\":\"${{ secrets.FUNCTION_ARN }}\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"description\\\":\\\"All retrospective $station documents.\\\"}\"}]"
                 
             done <<EOF
-            nairobi "*/5 * * * ? *" Nairobi
-            beirut "*/5 * * * ? *" Beirut
-            bangkok "*/5 * * * ? *" Bangkok
-            ny "0 * * * ? *" NY
-            ge "10 * * * ? *" GE
+            nairobi|*/5 * * * ? *|Nairobi
+            beirut|*/5 * * * ? *|Beirut
+            bangkok|*/5 * * * ? *|Bangkok
+            ny|0 * * * ? *|NY
+            ge|10 * * * ? *|GE
             EOF
