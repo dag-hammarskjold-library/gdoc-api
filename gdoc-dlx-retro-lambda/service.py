@@ -1,6 +1,6 @@
 # AWS Lambda function that runs gdoc_dlx 
 
-from gdoc_api.scripts import gdoc_dlx
+from gdoc_api.scripts import gdoc_dlx_retro
 import sys, datetime
 
 def handler(event, context):
