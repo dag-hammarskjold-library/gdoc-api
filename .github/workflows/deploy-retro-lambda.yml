@@ -46,7 +46,7 @@ jobs:
           id: deploy-image
           env:
             ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-            ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+            ECR_REPOSITORY: gdoc-dlx-retro-lambda
             IMAGE_TAG: latest
           run: |
             aws lambda update-function-code \
@@ -67,7 +67,7 @@ jobs:
                 
               aws events put-targets \
                 --rule "$RULE_NAME" \
-                --targets "[{\"Id\":\"1\",\"Arn\":\"${{ secrets.FUNCTION_ARN }}\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"description\\\":\\\"All retrospective $station documents.\\\"}\"}]"
+                --targets "[{\"Id\":\"1\",\"Arn\":\"${{ secrets.RETRO_FUNCTION_ARN }}\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"description\\\":\\\"All retrospective $station documents.\\\"}\"}]"
                 
             done <<EOF
             nairobi|*/5 * * * ? *|Nairobi

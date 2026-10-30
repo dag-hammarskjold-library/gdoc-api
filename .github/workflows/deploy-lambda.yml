@@ -61,7 +61,7 @@ jobs:
                 # Skip empty lines or lines starting with #
                 [[ -z "$loc" || "$loc" =~ ^# ]] && continue
 
-                RULE_NAME="***-${loc}-${day}day"
+                RULE_NAME="gdoc-dlx-lambda-${loc}-${day}day"
                 
                 echo "Updating rule: $RULE_NAME"
                 
