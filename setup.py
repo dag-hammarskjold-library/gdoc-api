@@ -23,7 +23,8 @@ setup(
     python_requires = '>=3.10',
     entry_points = {
         'console_scripts': [
-            'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:run'
+            'gdoc-dlx=gdoc_api.scripts.gdoc_dlx:run',
+            'gdoc-dlx-retro=gdoc_api.scripts.gdoc_dlx_retro:run'
         ]
     }
 )
