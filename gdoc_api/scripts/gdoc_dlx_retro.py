@@ -9,6 +9,7 @@ Usage:
     gdoc_dlx_retro.run()
 """
 
+import sys
 import boto3
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
@@ -17,10 +18,30 @@ from dlx import DB
 from gdoc_api.scripts import gdoc_dlx
 
 def get_args(**kwargs):
-    parser = ArgumentParser(description='Run gdoc-dlx for one day for a selected duty station; the date comes from the database.')
+    parser = ArgumentParser(prog='gdoc_dlx_retro', description='Run gdoc-dlx for one day for a selected duty station; the date comes from the database.')
     parser.add_argument('--station', type=str, default=None, help='Duty station (NY or GE)')
 
-    return parser.parse_args(**kwargs)
+    if kwargs:
+        process_kwargs(**kwargs)
+    
+    return parser.parse_args()
+
+def process_kwargs(**kwargs):
+    """If being imported as a function, process kwargs into command line args 
+    so they can be parsed by argparse"""
+
+    sys.argv = [sys.argv[0]]
+    params = ('station')
+
+    for param in ('station'):
+        if param not in params:
+            raise Exception(f'Required param {param}')
+
+    for param, arg in kwargs.items():
+        if param not in params:
+            raise Exception(f'Invalid argument: "{param}"')
+        else:
+            sys.argv.append(f'--{param}={arg}')
 
 def run():
     args = get_args()
