@@ -43,8 +43,8 @@ def process_kwargs(**kwargs):
         else:
             sys.argv.append(f'--{param}={arg}')
 
-def run():
-    args = get_args()
+def run(**kwargs):
+    args = get_args(**kwargs)
     station = args.station
     
     ssm = boto3.client('ssm')
