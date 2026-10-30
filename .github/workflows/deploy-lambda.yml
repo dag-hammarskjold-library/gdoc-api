@@ -75,7 +75,7 @@ jobs:
                   
                 aws events put-targets \
                   --rule "$RULE_NAME" \
-                  --targets "[{\"Id\":\"1\",\"Arn\":\"***\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"days_ago\\\":$day,\\\"description\\\":\\\"All $station documents from $day days ago.\\\"}\"}]"
+                  --targets "[{\"Id\":\"1\",\"Arn\":\"${{ secrets.FUNCTION_ARN }}\",\"Input\":\"{\\\"duty_station\\\":\\\"$station\\\",\\\"days_ago\\\":$day,\\\"description\\\":\\\"All $station documents from $day days ago.\\\"}\"}]"
                   
             done <<EOF
             ny|1|0 8 * * ? *|NY
