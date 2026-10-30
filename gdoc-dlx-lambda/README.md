@@ -9,7 +9,7 @@ This describes how to deploy this function to AWS Lambda using the Python librar
 
 AWS credentials must be configured in the deployment environment. 
 
-1. Navigate to this directory (`gdoc-api/aws-lambda`) 
+1. Navigate to this directory (`gdoc-api/gdoc-dlx-lambda`) 
 2. Make sure a virtual environment (venv) is activated.
 3. ```pip install -r requirements.txt```
 4. ```lambda deploy```
