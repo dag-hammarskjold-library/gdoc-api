@@ -1,6 +1,7 @@
 import sys, re, json, boto3, os
 from argparse import ArgumentParser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from pymongo import DESCENDING
 from dlx import DB as DLX
 from dlx.marc import Bib, Query, Condition, Or
 from dlx.file import S3, File, Identifier, FileExists, FileExistsConflict
@@ -11,9 +12,11 @@ def get_args(**kwargs):
     
     r = parser.add_argument_group('required')
     r.add_argument('--station', required=True, choices=['NY', 'GE', 'Vienna', 'Beirut', 'Bangkok', 'Nairobi'])
-    r.add_argument('--date', required=True, help='YYYY-MM-DD')
+
 
     nr = parser.add_argument_group('not required')
+    # Date is optional now since it can be supplied by --retro
+    nr.add_argument('--date', required=True, help='YYYY-MM-DD (Required unless --retro is used)')
     nr.add_argument('--symbol', help='get only the files for the specified symbol')
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
@@ -48,10 +51,10 @@ def get_args(**kwargs):
 
     # gDoc env - can be "qa" or "prod"
     gdoc_env = os.getenv("GDOC_ENV")
-    valid = ('testing', 'qa', 'prod')
+    valid_g = ('testing', 'qa', 'prod')
         
-    if gdoc_env not in valid:
-        raise Exception(f'Environment variable "GDOC_ENV" must be one of {valid}')
+    if gdoc_env not in valid_g:
+        raise Exception(f'Environment variable "GDOC_ENV" must be one of {valid_g}')
     
     # args for the gdoc env params are stored as a json string 
     gdoc_args = json.loads(param(f'gdoc-{gdoc_env}-api-secrets'))
@@ -63,45 +66,48 @@ def get_args(**kwargs):
     c.add_argument('--gdoc_client_secret', default=gdoc_args['client_secret'])
     c.add_argument('--gdoc_scope', default=gdoc_args['scope'])
 
-    # Deprecated, replaced by client ID and secret
-    #c.add_argument('--gdoc_api_username', default=json.loads(param('gdoc-{env}-api-secrets'))['username'])
-    #c.add_argument('--gdoc_api_password', default=json.loads(param('gdoc-{env}-api-secrets'))['password'])
-
     if kwargs:
         process_kwargs(**kwargs)
 
     return parser.parse_args()
 
 def process_kwargs(**kwargs):
-    """If being imported as a function, process kwargs into command line args 
-    so they can be parsed by argparse"""
-
     sys.argv = [sys.argv[0]]
-    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'recursive', 'connection_string', 'database', 's3_bucket', 'save_as', 'data_only')
 
-    for param in ('station', 'date'):
-        if param not in params:
-            raise Exception(f'Required param {param}')
+    # Valid params
+    params = ('station', 'date', 'symbol', 'language', 'overwrite', 'recursive', 
+               'connection_string', 'database', 's3_bucket', 'save_as', 'data_only', 'retro')
 
     for param, arg in kwargs.items():
         if param not in params:
             raise Exception(f'Invalid argument: "{param}"')
-
-        if param in ('overwrite', 'recursive', 'data_only'):
-            # boolean args
-            if arg == True:
+        if param in ('overwrite', 'recursive', 'data_only', 'retro'):
+            if arg is True:
                 sys.argv.append(f'--{param}')
         else:
             sys.argv.append(f'--{param}={arg}')
 
-def set_log():
-    pass
-    
-###
-
 def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=None, recursive=None, connection_string=None, database=None, s3_bucket=None, create_bibs=None):
     args = get_args(**kwargs)
 
+    # We only need to connect once
+    DLX.connect(args.connection_string, database='undlFiles')
+
+    # Retro logic
+    if args.retro:
+        retro_col = DLX.handle['gdoc_dlx_retro']
+
+        last_record = retro_col.find_one({'station': args.station}, sort=[('issue_date', DESCENDING)])
+
+        if not last_record:
+            args.date = datetime.strptime('2017-07-24', '%Y-%m-%d').strftime('%Y-%m-%d')
+        else:
+            next_date = last_record['issue_date'] + timedelta(days=1)
+            args.date = next_date.strftime('%Y-%m-%d')
+        
+        print(f"Retro Mode: Detected next date as {args.date} for station {args.station}")
+
+    # Validation
     if not args.date and not args.symbol:
         raise Exception('--symbol or --date required')
         
