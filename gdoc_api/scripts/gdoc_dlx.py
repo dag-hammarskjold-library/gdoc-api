@@ -24,6 +24,7 @@ def get_args(**kwargs):
     nr.add_argument('--save_as', help='save the payload (zip file) to the specified location and quit without uploading files to DLX')
     nr.add_argument('--data_only', action='store_true', help='get only the data without downloading the files and print it to STDOUT')
     nr.add_argument('--create_bibs', action='store_true', help='Create bib record for symbol if it doesn\'t exist')
+    nr.add_argument('--retro', action='store_true', help='Automatically determine the next date based on the database')
  
     c = parser.add_argument_group(
         title='credentials', 
