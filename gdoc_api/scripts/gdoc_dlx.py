@@ -16,7 +16,7 @@ def get_args(**kwargs):
 
     nr = parser.add_argument_group('not required')
     # Date is optional now since it can be supplied by --retro
-    nr.add_argument('--date', required=True, help='YYYY-MM-DD (Required unless --retro is used)')
+    nr.add_argument('--date', help='YYYY-MM-DD (Required unless --retro is used)')
     nr.add_argument('--symbol', help='get only the files for the specified symbol')
     nr.add_argument('--language', choices=['A', 'C', 'E', 'F', 'R', 'S', 'G'], help='get only the files for the specified language')
     nr.add_argument('--overwrite', action='store_true', help='ignore conflicts and overwrite exisiting DLX data')
