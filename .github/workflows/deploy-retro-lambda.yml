@@ -1,4 +1,4 @@
-name: Build and push gdox-dlx-retro-lambda to ECR and Lambda
+name: Build and push gdoc-dlx-retro-lambda to ECR and Lambda
 on:
     release:
       types: [ released ]

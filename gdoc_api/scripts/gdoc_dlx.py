@@ -93,15 +93,16 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
 
     # We only need to connect once
     DLX.connect(args.connection_string, database='undlFiles')
+    retro_col = DLX.handle['gdoc_dlx_retro']
+    log_col = DLX.handle['gdoc_log']
+    next_date = datetime.strptime('2017-07-24', '%Y-%m-%d').strftime('%Y-%m-%d')
 
     # Retro logic
     if args.retro:
-        retro_col = DLX.handle['gdoc_dlx_retro']
-
         last_record = retro_col.find_one({'station': args.station}, sort=[('issue_date', DESCENDING)])
 
         if not last_record:
-            args.date = datetime.strptime('2017-07-24', '%Y-%m-%d').strftime('%Y-%m-%d')
+            args.date = next_date
         else:
             next_date = last_record['issue_date'] + timedelta(days=1)
             args.date = next_date.strftime('%Y-%m-%d')
@@ -115,7 +116,6 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
     if args.language and not args.symbol:
         raise Exception('--language requires --symbol')
 
-    DLX.connect(args.connection_string, database=args.database) 
     S3.connect(bucket=args.s3_bucket) # not needed since AWS credentials are already in place
     
     g = Gdoc(
@@ -218,7 +218,7 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
 
         if import_result:
             # log in DB
-            DLX.handle['gdoc_log'].insert_one(
+            log_col.insert_one(
                 {
                     'imported': True,
                     'gdoc_station': args.station,
@@ -233,7 +233,7 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
             return import_result
         else:
             # log in DB
-            DLX.handle['gdoc_log'].insert_one(
+            log_col.insert_one(
                 {
                     'imported': False,
                     'message': to_log,
@@ -294,6 +294,9 @@ def run(**kwargs): # *, station, date, symbol=None, language=None, overwrite=Non
         
     if i == 0:
         print(json.dumps({'info': 'No results', 'data': {'station': args.station, 'date': args.date, 'symbols': args.symbol, 'language': args.language}}))
+
+    if args.retro:
+        retro_col.insert_one({'issue_date': next_date, 'station': args.station, 'completed': datetime.now()})
 
 ###
 
